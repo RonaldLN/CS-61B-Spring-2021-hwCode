@@ -113,12 +113,58 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+        int size = board.size();
+        int[] spacesToMove = createAndInitArr(size, 0);
+        // int[] valuesToMerge = createAndInitArr(size, 0);
+        Tile[] tilesToMerge = new Tile[size];
+        for (int i = 0; i < size; i++) {
+            int row = size - i - 1;
+
+            for (int j = 0; j < size; j++) {
+                Tile tile = board.tile(j, row);
+                if (tile == null) {
+                    spacesToMove[j] += 1;
+                    continue;
+                }
+
+                // if a tile moves, it will leave 1 space
+                // and perhaps occupy another,
+                // thus spaceToMove may remain unchanged or add 1.
+                if (tilesToMerge[j] != null && tilesToMerge[j].value() == tile.value()) {
+                    int target = tilesToMerge[j].row();
+                    tilesToMerge[j] = null;
+                    board.move(j, target, tile);
+                    spacesToMove[j] += 1;
+                    score += board.tile(j, target).value();
+                    changed = true;
+                    continue;
+                }
+
+                if (spacesToMove[j] != 0) {
+                    int target = tile.row() + spacesToMove[j];
+                    board.move(j, target, tile);
+                    changed = true;
+                    tile = board.tile(j, target);
+                }
+                tilesToMerge[j] = tile;
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
+    }
+
+    public static int[] createAndInitArr(int length, int num) {
+        int[] arr = new int[length];
+        for (int i = 0; i < length; i++) {
+            arr[i] = num;
+        }
+        return arr;
     }
 
     /** Checks if the game is over and sets the gameOver variable
