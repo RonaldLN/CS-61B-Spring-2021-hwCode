@@ -114,9 +114,8 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
         board.setViewingPerspective(side);
-        int size = board.size();
-        for (int i = 0; i < size; i++) {
-            if (processCol(i, size)) {
+        for (int i = 0; i < board.size(); i++) {
+            if (processCol(i)) {
                 changed = true;
             }
         }
@@ -129,45 +128,61 @@ public class Model extends Observable {
         return changed;
     }
 
-    public boolean processCol(int col, int size) {
+    public boolean processCol(int col) {
         boolean changed = false;
-        int emptySpaces = 0;
-        Tile lastTile = null;
+        int size = board.size();
+
+        boolean[] isMerged = new boolean[size];
         for (int i = 0; i < size; i++) {
-            Tile tile = board.tile(col, size - i - 1);
-            if (tile == null) {
-                emptySpaces += 1;
-                continue;
-            }
+            int row = size - i - 1;
+            isMerged[row] = false;
 
-            if (mergeTiles(lastTile, tile)) {
-                lastTile = null;
-                emptySpaces += 1;
-                changed = true;
-                continue;
-            }
+            if (needMove(col, row)) {
+                int target = findTarget(col, row, isMerged);
+                boolean doMerge = board.move(col, target, board.tile(col, row));
 
-            if (emptySpaces != 0) {
-                int targetRow = tile.row() + emptySpaces;
-                board.move(col, targetRow, tile);
-                lastTile = board.tile(col, targetRow);
+                if (doMerge) {
+                    isMerged[target] = true;
+                    score += board.tile(col, target).value();
+                }
+
                 changed = true;
-            } else {
-                lastTile = tile;
             }
         }
         return changed;
     }
 
-    public boolean mergeTiles(Tile lastTile, Tile tile) {
-        if (lastTile != null && lastTile.value() == tile.value()) {
-            int targetCol = lastTile.col();
-            int targetRow = lastTile.row();
-            board.move(targetCol, targetRow, tile);
-            score += board.tile(targetCol, targetRow).value();
-            return true;
+    public boolean needMove(int col, int row) {
+        Tile tile = board.tile(col, row);
+        if (tile == null) {
+            return false;
+        } else if (row == board.size() - 1) {
+            return false;
+        } else {
+            Tile upTile = board.tile(col, row + 1);
+            return upTile == null || upTile.value() == tile.value();
         }
-        return false;
+    }
+
+    public int findTarget(int col, int row, boolean[] isMerge) {
+        int target = findEmptyTarget(col, row);
+
+        if (target + 1 < board.size() && !isMerge[target + 1]
+                && board.tile(col, row).value() == board.tile(col, target + 1).value()) {
+            target += 1;
+        }
+        return target;
+    }
+
+    public int findEmptyTarget(int col, int row) {
+        int target = row;
+        for (int i = row + 1; i < board.size(); i++) {
+            if (board.tile(col, i) != null) {
+                break;
+            }
+            target = i;
+        }
+        return target;
     }
 
     /** Checks if the game is over and sets the gameOver variable
