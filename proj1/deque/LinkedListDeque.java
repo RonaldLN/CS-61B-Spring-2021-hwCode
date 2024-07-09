@@ -92,11 +92,11 @@ public class LinkedListDeque<T> {
         return n.item;
     }
 
-    /** Returns the ith item of this IntList. */
     public T getRecursive(int index) {
         return getRecursive(index, sentinel.next);
     }
 
+    /** Helper method for getRecursive */
     private T getRecursive(int index, Node node) {
         if (node == null) {
             return null;
