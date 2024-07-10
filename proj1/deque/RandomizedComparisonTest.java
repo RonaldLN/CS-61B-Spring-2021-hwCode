@@ -31,7 +31,7 @@ public class RandomizedComparisonTest {
 
         int N = 100000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 4);
+            int operationNumber = StdRandom.uniform(0, 5);
             if (operationNumber == 0) {
                 // addLast
                 int randVal = StdRandom.uniform(0, 100);
@@ -63,6 +63,29 @@ public class RandomizedComparisonTest {
                 L.addFirst(randVal);
                 L2.addFirst(randVal);
                 System.out.println("addFirst(" + randVal + ")");
+            } else if (operationNumber == 4) {
+                // equals
+                int randVal = StdRandom.uniform(0, 2);
+                if (randVal == 0) {
+                    assertTrue(L.equals(L2));
+                    System.out.println("L.equals: true");
+                } else {
+                    assertTrue(L2.equals(L));
+                    System.out.println("L2.equals: true");
+                }
+            } else if (operationNumber == 5) {
+                // removeFirst
+                if (L.size() == 0 || L2.size() == 0) {
+                    continue;
+                }
+                int val = L.removeFirst();
+                int val2 = L2.removeFirst();
+                if (val != val2) {
+                    System.out.println(L.size());
+                    System.out.println(L2.size());
+                }
+                assertEquals(val, val2);
+                System.out.println("removeFirst: " + val);
             }
         }
     }

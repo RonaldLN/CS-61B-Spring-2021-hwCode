@@ -176,7 +176,7 @@ public class ArrayDeque<T> implements Deque<T> {
         }
 
         Iterator<T> iter1 = iterator();
-        Iterator<T> iter2 = o.iterator();
+        Iterator<T> iter2 = ((Deque<T>) o).iterator();
 
         while (iter1.hasNext() && iter2.hasNext()) {
             if (iter1.next() != iter2.next()) {
