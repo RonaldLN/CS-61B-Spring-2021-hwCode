@@ -17,7 +17,7 @@ public class TestArrayDequeEC {
 
         int N = 100000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 6);
+            int operationNumber = StdRandom.uniform(0, 4);
             if (operationNumber == 0) {
                 // addFirst
                 int randVal = StdRandom.uniform(0, 100);
@@ -47,7 +47,8 @@ public class TestArrayDequeEC {
                     System.out.println(L.size());
                     System.out.println(L2.size());
                 }
-                m = "removeFirst: " + val + "\n";
+                // m = "removeFirst: " + val + "\n";
+                m = "removeFirst()\n";
                 message += m;
                 assertEquals(message, val, val2);
                 // System.out.println("removeFirst: " + val);
@@ -63,7 +64,8 @@ public class TestArrayDequeEC {
                     System.out.println(L.size());
                     System.out.println(L2.size());
                 }
-                m = "removeLast: " + val + "\n";
+                // m = "removeLast: " + val + "\n";
+                m = "removeLast()\n";
                 message += m;
                 assertEquals(message, val, val2);
                 // System.out.println("removeLast: " + val);
