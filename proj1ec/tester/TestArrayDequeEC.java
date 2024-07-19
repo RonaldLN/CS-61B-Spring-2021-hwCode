@@ -26,7 +26,7 @@ public class TestArrayDequeEC {
                 // System.out.println("addFirst(" + randVal + ")");
                 m = "addFirst(" + randVal + ")\n";
                 message += m;
-                System.out.print(m);
+                // System.out.print(m);
             } else if (operationNumber == 1) {
                 // addLast
                 int randVal = StdRandom.uniform(0, 100);
@@ -35,7 +35,7 @@ public class TestArrayDequeEC {
                 // System.out.println("addLast(" + randVal + ")");
                 m = "addLast(" + randVal + ")\n";
                 message += m;
-                System.out.print(m);
+                // System.out.print(m);
             } else if (operationNumber == 2) {
                 // removeFirst
                 if (L.size() == 0 || L2.size() == 0) {
@@ -43,16 +43,16 @@ public class TestArrayDequeEC {
                 }
                 Integer val = L.removeFirst();
                 Integer val2 = L2.removeFirst();
-                if (val != val2) {
-                    System.out.println(L.size());
-                    System.out.println(L2.size());
-                }
+                // if (val != val2) {
+                //     System.out.println(L.size());
+                //     System.out.println(L2.size());
+                // }
                 // m = "removeFirst: " + val + "\n";
                 m = "removeFirst()\n";
                 message += m;
                 assertEquals(message, val, val2);
                 // System.out.println("removeFirst: " + val);
-                System.out.print(m);
+                // System.out.print(m);
             } else if (operationNumber == 3) {
                 // removeLast
                 if (L.size() == 0 || L2.size() == 0) {
@@ -60,16 +60,16 @@ public class TestArrayDequeEC {
                 }
                 Integer val = L.removeLast();
                 Integer val2 = L2.removeLast();
-                if (val != val2) {
-                    System.out.println(L.size());
-                    System.out.println(L2.size());
-                }
+                // if (val != val2) {
+                //     System.out.println(L.size());
+                //     System.out.println(L2.size());
+                // }
                 // m = "removeLast: " + val + "\n";
                 m = "removeLast()\n";
                 message += m;
                 assertEquals(message, val, val2);
                 // System.out.println("removeLast: " + val);
-                System.out.print(m);
+                // System.out.print(m);
             } else if (operationNumber == 4) {
                 // size
                 int size = L.size();
@@ -78,7 +78,7 @@ public class TestArrayDequeEC {
                 message += m;
                 assertEquals(message, size, size2);
                 // System.out.println("size: " + size);
-                System.out.print(m);
+                // System.out.print(m);
             } else if (operationNumber == 5) {
                 // get
                 if (L.size() == 0 || L2.size() == 0) {
@@ -93,7 +93,7 @@ public class TestArrayDequeEC {
                 message += m;
                 assertEquals(message, val, val2);
                 // System.out.println("get: " + val);
-                System.out.print(m);
+                // System.out.print(m);
             }
         }
     }
