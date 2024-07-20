@@ -121,7 +121,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         private int pos;
         private Node node;
 
-        public LinkedlistDequeIterator() {
+        private LinkedlistDequeIterator() {
             pos = 0;
             node = sentinel;
         }
