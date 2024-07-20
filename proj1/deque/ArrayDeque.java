@@ -145,7 +145,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         private int pos;
         private int index;
 
-        public ArrayDequeIterator() {
+        private ArrayDequeIterator() {
             pos = 0;
             index = indexForward(nextFirst);
         }

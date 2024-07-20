@@ -6,18 +6,18 @@ import edu.princeton.cs.algs4.StdDraw;
  * A client that uses the synthesizer package to replicate a plucked guitar string sound
  */
 public class DrumHero {
-    private static final int keyNum = 37;
-    public static final double[] CONCERTS = new double[keyNum];
-    public static final String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
+    private static final int KEY_NUM = 37;
+    public static final double[] CONCERTS = new double[KEY_NUM];
+    public static final String KEYBOARD = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
 
     public static void main(String[] args) {
-        for (int i = 0; i < keyNum; i++) {
+        for (int i = 0; i < KEY_NUM; i++) {
             CONCERTS[i] = 440.0 * Math.pow(2, (i - 24.0) / 12.0);
         }
 
         /* create two guitar strings, for 37 concerts */
-        Drum[] strings = new Drum[keyNum];
-        for (int i = 0; i < keyNum; i++) {
+        Drum[] strings = new Drum[KEY_NUM];
+        for (int i = 0; i < KEY_NUM; i++) {
             strings[i] = new Drum(CONCERTS[i]);
         }
 
@@ -26,7 +26,7 @@ public class DrumHero {
             /* check if the user has typed a key; if so, process it */
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
-                int keyIndex = keyboard.indexOf(key);
+                int keyIndex = KEYBOARD.indexOf(key);
                 if (keyIndex >= 0) {
                     strings[keyIndex].pluck();
                 }
@@ -34,7 +34,7 @@ public class DrumHero {
 
             /* compute the superposition of samples */
             double sample = 0;
-            for (int i = 0; i < keyNum; i++) {
+            for (int i = 0; i < KEY_NUM; i++) {
                 sample += strings[i].sample();
             }
 
@@ -42,7 +42,7 @@ public class DrumHero {
             StdAudio.play(sample);
 
             /* advance the simulation of each guitar string by one step */
-            for (int i = 0; i < keyNum; i++) {
+            for (int i = 0; i < KEY_NUM; i++) {
                 strings[i].tic();
             }
         }
