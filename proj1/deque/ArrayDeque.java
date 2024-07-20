@@ -7,9 +7,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private int size;
     private int nextFirst;
     private int nextLast;
+    private static final int START_SIZE = 8;
 
     public ArrayDeque() {
-        items = (T[]) new Object[100];
+        items = (T[]) new Object[START_SIZE];
         size = 0;
         nextFirst = 0;
         nextLast = 1;
@@ -111,6 +112,9 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         }
         nextFirst = indexForward(nextFirst);
         size -= 1;
+        if (items.length > START_SIZE && (float) size / items.length < 0.3) {
+            resize(items.length / 2);
+        }
         T x = items[nextFirst];
         items[nextFirst] = null;
         return x;
@@ -123,6 +127,9 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         }
         nextLast = indexBackward(nextLast);
         size -= 1;
+        if (items.length > START_SIZE && (float) size / items.length < 0.3) {
+            resize(items.length / 2);
+        }
         T x = items[nextLast];
         items[nextLast] = null;
         return x;
@@ -180,7 +187,23 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         if (!(o instanceof Deque)) {
             return false;
         }
-        Deque<T> d = (Deque<T>) o;
-        return equals(d);
+        if (((Deque<T>) o).size() != size) {
+            return false;
+        }
+        Iterator<T> it1 = iterator();
+        Iterator<T> it2;
+        if (o.getClass() == LinkedListDeque.class) {
+            it2 = ((LinkedListDeque<T>) o).iterator();
+        } else {
+            it2 = ((ArrayDeque<T>) o).iterator();
+        }
+        while (it1.hasNext()) {
+            T item1 = it1.next();
+            T item2 = it2.next();
+            if (!item1.equals(item2)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
