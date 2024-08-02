@@ -109,7 +109,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         System.out.println("]");
     }
 
-    public void printInOrder(BSTNode node) {
+    private void printInOrder(BSTNode node) {
         if (node == null) {
             return;
         }
