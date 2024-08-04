@@ -2,6 +2,7 @@ package bstmap;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     private BSTNode root;
@@ -85,22 +86,125 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        TreeSet<K> ts = new TreeSet<>();
+        return getKeySet(root, ts);
     }
+
+    private Set<K> getKeySet(BSTNode node, Set<K> s) {
+        if (node == null) {
+            return s;
+        }
+        s.add(node.key);
+        getKeySet(node.left, s);
+        return getKeySet(node.right, s);
+    }
+
+    private class removeJudge {
+        private final V targetValue;
+
+        public removeJudge() {
+            targetValue = null;
+        }
+
+        public removeJudge(V tv) {
+            targetValue = tv;
+        }
+
+        public boolean judge(V value) {
+            if (targetValue == null) {
+                return true;
+            }
+            return value.equals(targetValue);
+        }
+    }
+
+    private V removeReturnValue;
 
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        removeReturnValue = null;
+        root = remove(root, key, new removeJudge());
+        size -= 1;
+        return removeReturnValue;
     }
 
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        removeReturnValue = null;
+        root = remove(root, key, new removeJudge(value));
+        size -= 1;
+        return removeReturnValue;
+    }
+
+    private BSTNode remove(BSTNode node, K key, removeJudge judge) {
+        if (node == null) {
+            return null;
+        }
+        int result = key.compareTo(node.key);
+        if (result == 0) {
+            if (!judge.judge(node.value)) {
+                return node;
+            }
+
+            if (node.left == null) {
+                removeReturnValue = node.value;
+                return node.right;
+            } else if (node.right == null) {
+                removeReturnValue = node.value;
+                return node.left;
+            }
+
+            BSTNode nextToRemove = maxKey(node.left);
+            V returnValue = node.value;
+            node.key = nextToRemove.key;
+            node.value = nextToRemove.value;
+            node.left = remove(node.left, nextToRemove.key, new removeJudge());
+            removeReturnValue = returnValue;
+        } else if (result < 0) {
+            node.left = remove(node.left, key, judge);
+        } else {
+            node.right = remove(node.right, key, judge);
+        }
+
+        return node;
+    }
+
+    private BSTNode maxKey(BSTNode node) {
+        if (node == null) {
+            return null;
+        } else if (node.right == null) {
+            return node;
+        } else {
+            return maxKey(node.right);
+        }
+    }
+
+    private class BSTMapIter implements Iterator<K> {
+        private final K[] keyArr;
+        private int pos;
+
+        public BSTMapIter() {
+            Set<K> s = keySet();
+            keyArr = (K[]) s.toArray();
+            pos = 0;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return pos < keyArr.length;
+        }
+
+        @Override
+        public K next() {
+            K key = keyArr[pos];
+            pos += 1;
+            return key;
+        }
     }
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return new BSTMapIter();
     }
 
     public void printInOrder() {
