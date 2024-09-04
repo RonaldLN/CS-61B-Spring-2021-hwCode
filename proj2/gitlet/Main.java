@@ -1,7 +1,9 @@
 package gitlet;
 
+import static gitlet.Utils.*;
+
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author Ronald Luo
  */
 public class Main {
 
@@ -10,15 +12,47 @@ public class Main {
      */
     public static void main(String[] args) {
         // TODO: what if args is empty?
+        if (args.length == 0) {
+            exitWithMessage("Please enter a command.");
+        }
         String firstArg = args[0];
+        String text;
         switch(firstArg) {
             case "init":
                 // TODO: handle the `init` command
+                validateNumArgs("init", args, 1);
+                Repository.gitInit();
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
+                validateNumArgs("add", args, 2);
+                text = args[1];
+                Repository.gitAdd(text);
                 break;
             // TODO: FILL THE REST IN
+            case "commit":
+                validateNumArgs("commit", args, 2);
+                text = args[1];
+                Repository.gitCommit(text);
+                break;
+            case "test":
+                Repository.test();
+            default:
+                exitWithMessage("No command with that name exists.");
+        }
+    }
+
+    /**
+     * Checks the number of arguments versus the expected number,
+     * print error message and exits if they do not match.
+     *
+     * @param cmd Name of command you are validating
+     * @param args Argument array from command line
+     * @param n Number of expected arguments
+     */
+    public static void validateNumArgs(String cmd, String[] args, int n) {
+        if (args.length != n) {
+            exitWithMessage("Incorrect operands.");
         }
     }
 }
