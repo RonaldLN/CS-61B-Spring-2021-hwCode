@@ -55,11 +55,10 @@ public class Repository {
         BRANCHES_FOLDER.mkdir();
 
         Commit initCommit = makeInitialCommit();
-        String commitId = sha1(serialize(initCommit));
         initCommit.saveCommit();
 
         currentBranchName = "master";
-        currentBranch = new Branch("master", commitId);
+        currentBranch = new Branch("master", initCommit.getId());
         currentBranch.saveBranch();
         setCurrentBranch();
     }
@@ -81,10 +80,9 @@ public class Repository {
         }
 
         Blob blob = new Blob(fileName);
-        String blobId = sha1(serialize(blob));
 
         getCurrentBranch();
-        Commit headCommit = getCommit(currentBranch.head);
+        Commit headCommit = currentBranch.getHeadCommit();
         if (headCommit.tree.containsKey(fileName)) {
             String lastBlobId = headCommit.tree.get(fileName);
             Blob last = getBlob(lastBlobId);
@@ -98,7 +96,7 @@ public class Repository {
             File oldBlob = join(BLOBS_FOLDER, stagingArea.get(fileName));
             oldBlob.delete();
         }
-        stagingArea.put(fileName, blobId);
+        stagingArea.put(fileName, blob.getId());
         saveStagingArea();
         blob.saveBlob();
     }
@@ -120,7 +118,60 @@ public class Repository {
             exitWithMessage("Not in an initialized Gitlet directory.");
         }
 
+        if (message.isEmpty()) {
+            exitWithMessage("Please enter a commit message.");
+        }
 
+        getStagingArea();
+        if (stagingArea.isEmpty()) {
+            exitWithMessage("No changes added to the commit.");
+        }
+
+        getCurrentBranch();
+        Commit head = currentBranch.getHeadCommit();
+        Commit newCommit = new Commit(message, currentBranch.head);
+        newCommit.tree.putAll(head.tree);
+        stageToCommit(newCommit);
+        stagingAreaFile.delete();
+
+        currentBranch.head = newCommit.getId();
+        newCommit.saveCommit();
+        currentBranch.saveBranch();
+    }
+
+    public static void gitRm(String fileName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        getStagingArea();
+        getCurrentBranch();
+        Commit head = currentBranch.getHeadCommit();
+        if (!stagingArea.containsKey(fileName) && !head.tree.containsKey(fileName)) {
+            exitWithMessage("No reason to remove the file.");
+        }
+        String blobId = stagingArea.remove(fileName);
+        if (blobId != null) {
+            File blobFile = join(BLOBS_FOLDER, blobId);
+            blobFile.delete();
+        }
+        if (head.tree.containsKey(fileName)) {
+            stagingArea.put(fileName, "removal");
+        }
+        saveStagingArea();
+        File file = join(CWD, fileName);
+        file.delete();
+    }
+
+    private static void stageToCommit(Commit commit) {
+        for (String key : stagingArea.keySet()) {
+            String blobId = stagingArea.get(key);
+            if (blobId.equals("removal")) {
+                commit.tree.remove(key);
+            } else {
+                commit.tree.put(key, blobId);
+            }
+        }
     }
 
     /* Test. */

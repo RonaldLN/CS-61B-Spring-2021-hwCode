@@ -26,6 +26,10 @@ public class Blob implements Serializable {
         return readObject(blobFile, Blob.class);
     }
 
+    public String getId() {
+        return sha1(serialize(this));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -35,6 +39,6 @@ public class Blob implements Serializable {
             return false;
         }
         Blob b = (Blob) obj;
-        return sha1(serialize(b)).equals(sha1(serialize(this)));
+        return b.getId().equals(getId());
     }
 }

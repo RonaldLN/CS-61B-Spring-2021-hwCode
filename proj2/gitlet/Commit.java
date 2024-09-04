@@ -5,7 +5,6 @@ package gitlet;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.io.Serializable;
 import java.io.File;
-import java.util.Map;
 import java.util.TreeMap;
 import static gitlet.Utils.*;
 
@@ -34,13 +33,13 @@ public class Commit implements Serializable {
 
     /** The commit date and the auther of this Commit. */
     private Date date;
-    /** The parent commit. */
-    private Commit parent;
-    private Commit secondParent;
+    /** The parent commits' ids. */
+    private String parent;
+    private String secondParent;
     /** A mapping of file names to blob references. */
-    public Map<String, String> tree;
+    public TreeMap<String, String> tree;
 
-    public Commit(String msg, Commit p) {
+    public Commit(String msg, String p) {
         message = msg;
         date = new Date();
         date.getTime();
@@ -66,6 +65,10 @@ public class Commit implements Serializable {
     public static Commit getCommit(String id) {
         File commitFile = join(COMMITS_FOLDER, id);
         return readObject(commitFile, Commit.class);
+    }
+
+    public String getId() {
+        return sha1(serialize(this));
     }
 
     @Override

@@ -23,4 +23,8 @@ public class Branch implements Serializable {
         File branchFile = join(BRANCHES_FOLDER, name);
         writeObject(branchFile, this);
     }
+
+    public Commit getHeadCommit() {
+        return Commit.getCommit(head);
+    }
 }

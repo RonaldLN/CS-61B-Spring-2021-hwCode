@@ -35,6 +35,11 @@ public class Main {
                 text = args[1];
                 Repository.gitCommit(text);
                 break;
+            case "rm":
+                validateNumArgs("rm", args, 2);
+                text = args[1];
+                Repository.gitRm(text);
+                break;
             case "test":
                 Repository.test();
             default:
