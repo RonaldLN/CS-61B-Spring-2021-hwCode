@@ -40,8 +40,26 @@ public class Main {
                 text = args[1];
                 Repository.gitRm(text);
                 break;
+            case "log":
+                validateNumArgs("log", args, 1);
+                Repository.gitLog();
+                break;
+            case "global-log":
+                validateNumArgs("global-log", args, 1);
+                Repository.gitGlobalLog();
+                break;
+            case "find":
+                validateNumArgs("find", args, 2);
+                text = args[1];
+                Repository.gitFind(text);
+                break;
+            case "status":
+                validateNumArgs("status", args, 1);
+                Repository.gitStatus();
+                break;
             case "test":
                 Repository.test();
+                break;
             default:
                 exitWithMessage("No command with that name exists.");
         }

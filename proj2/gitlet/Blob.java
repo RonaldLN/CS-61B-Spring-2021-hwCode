@@ -41,4 +41,12 @@ public class Blob implements Serializable {
         Blob b = (Blob) obj;
         return b.getId().equals(getId());
     }
+
+    public boolean equalsWithContent(File file) {
+        return sha1(readContents(file)).equals(sha1(content));
+    }
+
+    public boolean equalsWithContent(String file) {
+        return equalsWithContent(join(Repository.CWD, file));
+    }
 }

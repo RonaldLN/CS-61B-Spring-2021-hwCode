@@ -7,7 +7,7 @@ import static gitlet.Utils.*;
 import static gitlet.Commit.*;
 import static gitlet.Blob.*;
 import static gitlet.Branch.*;
-import java.util.TreeMap;
+import java.util.*;
 
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -74,6 +74,10 @@ public class Repository {
     }
 
     public static void gitAdd(String fileName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
         File file = join(CWD, fileName);
         if (!file.exists()) {
             exitWithMessage("File does not exist.");
@@ -174,14 +178,179 @@ public class Repository {
         }
     }
 
+    public static void gitLog() {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        getCurrentBranch();
+        Commit commit = currentBranch.getHeadCommit();
+        while (commit != null) {
+            System.out.println(commit);
+            commit = commit.getParentCommit();
+        }
+    }
+
+    public static void gitGlobalLog() {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        List<String> allCommits = plainFilenamesIn(COMMITS_FOLDER);
+        if (allCommits != null) {
+            for (String id : allCommits) {
+                System.out.println(getCommit(id));
+            }
+        }
+    }
+
+    public static void gitFind(String message) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        List<String> allCommits = plainFilenamesIn(COMMITS_FOLDER);
+        boolean notFound = true;
+        if (allCommits != null) {
+            for (String id : allCommits) {
+                Commit commit = getCommit(id);
+                if (commit.message.equals(message)) {
+                    System.out.println(commit.getId());
+                    notFound = false;
+                }
+            }
+        }
+        if (notFound) {
+            exitWithMessage("Found no commit with that message.");
+        }
+    }
+
+    public static void gitStatus() {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        getCurrentBranch();
+        getStagingArea();
+
+        branchesStatus();
+        stageAndRemoveStatus();
+        modifiedAndUntrackedStatus();
+    }
+
+    private static class stringComparator implements Comparator<String> {
+        @Override
+        public int compare(String o1, String o2) {
+            return o1.compareTo(o2);
+        }
+    }
+
+    private static void branchesStatus() {
+        System.out.println("=== Branches ===");
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        allBranches.sort(new stringComparator());
+        for (String b : allBranches) {
+            if (b.equals(currentBranchName)) {
+                System.out.print("*");
+            }
+            System.out.println(b);
+        }
+        System.out.println();
+    }
+
+    private static void stageAndRemoveStatus() {
+        List<String> stagedFiles = new LinkedList<>();
+        List<String> removedFiles = new LinkedList<>();
+        for (String key : stagingArea.keySet()) {
+            if (stagingArea.get(key).equals("removal")) {
+                removedFiles.add(key);
+            } else {
+                stagedFiles.add(key);
+            }
+        }
+        stagedFiles.sort(new stringComparator());
+        removedFiles.sort(new stringComparator());
+
+        System.out.println("=== Staged Files ===");
+        for (String f : stagedFiles) {
+            System.out.println(f);
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        for (String f : removedFiles) {
+            System.out.println(f);
+        }
+        System.out.println();
+    }
+
+    private static void modifiedAndUntrackedStatus() {
+        Commit head = currentBranch.getHeadCommit();
+        TreeMap<String, String> stagedFiles = new TreeMap<>(head.tree);
+        stagedFiles.putAll(stagingArea);
+
+        List<String> allFiles = new LinkedList<>(plainFilenamesIn(CWD));
+        TreeMap<String, Integer> modifiedNotStaged = new TreeMap<>(new stringComparator());
+
+        for (String f : stagedFiles.keySet()) {
+            boolean res = allFiles.remove(f);
+            if (!res) {
+                modifiedNotStaged.put(f, 1);
+                continue;
+            }
+            Blob b = Blob.getBlob(stagedFiles.get(f));
+            if (!b.equalsWithContent(f)) {
+                modifiedNotStaged.put(f, 0);
+            }
+        }
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        for (String f : modifiedNotStaged.keySet()) {
+            System.out.print(f);
+            switch (modifiedNotStaged.get(f)) {
+                case 0:
+                    System.out.println(" (modified)");
+                    break;
+                case 1:
+                    System.out.println(" (deleted)");
+                    break;
+            }
+        }
+        System.out.println();
+
+        allFiles.sort(new stringComparator());
+        System.out.println("=== Untracked Files ===");
+        for (String f : allFiles) {
+            System.out.println(f);
+        }
+        System.out.println();
+    }
+
     /* Test. */
     public static void test() {
-        Blob a = new Blob("gitlet-design.md");
-        Blob b = new Blob("gitlet-design.md");
-        System.out.println(a == b);
-        System.out.println(sha1(serialize(a)));
-        System.out.println(sha1(serialize(b)));
-        System.out.println(a.equals(b));
-        // System.out.println(sha1(a.content));
+        // Blob a = new Blob("gitlet-design.md");
+        // Blob b = new Blob("gitlet-design.md");
+        // System.out.println(a == b);
+        // System.out.println(sha1(serialize(a)));
+        // System.out.println(sha1(serialize(b)));
+        // System.out.println(a.equals(b));
+        // // System.out.println(sha1(a.content));
+        Repository.gitInit();
+        Repository.gitAdd("aaa.md");
+        Repository.gitCommit("001");
+        Repository.gitAdd("aaavv.md");
+        Repository.gitCommit("002");
+        // Repository.gitLog();
+        // Repository.gitGlobalLog();
+        // Repository.gitFind("003");
+        File f = join(CWD, "12345");
+        File f2 = join(CWD, "123456");
+        writeContents(f, "12345");
+        writeContents(f2, "");
+        Repository.gitAdd("12345");
+        Repository.gitAdd("123456");
+        writeContents(f2, "aa");
+        f.delete();
+        Repository.gitStatus();
     }
 }

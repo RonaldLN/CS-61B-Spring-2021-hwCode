@@ -24,7 +24,7 @@ public class Commit implements Serializable {
      */
 
     /** The message of this Commit. */
-    private String message;
+    public final String message;
 
     /* TODO: fill in the rest of this class. */
 
@@ -71,6 +71,10 @@ public class Commit implements Serializable {
         return sha1(serialize(this));
     }
 
+    public Commit getParentCommit() {
+        return parent == null ? null : getCommit(parent);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -81,5 +85,25 @@ public class Commit implements Serializable {
         }
         Commit c = (Commit) obj;
         return sha1(serialize(c)).equals(sha1(serialize(this)));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("===\n");
+        sb.append("commit ");
+        sb.append(getId());
+        if (secondParent != null) {
+            sb.append("\nMerge: ");
+            sb.append(parent.substring(0, 7));
+            sb.append(" ");
+            sb.append(secondParent.substring(0, 7));
+        }
+        sb.append("\nDate: ");
+        sb.append(date);
+        sb.append("\n");
+        sb.append(message);
+        sb.append("\n");
+        return sb.toString();
     }
 }
