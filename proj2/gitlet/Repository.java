@@ -122,7 +122,7 @@ public class Repository {
             exitWithMessage("Not in an initialized Gitlet directory.");
         }
 
-        if (message.equals("")) {
+        if (message.isEmpty()) {
             exitWithMessage("Please enter a commit message.");
         }
 

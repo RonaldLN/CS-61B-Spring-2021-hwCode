@@ -8,13 +8,14 @@ public class Blob implements Serializable {
     /** Blobs folder. */
     public static final File BLOBS_FOLDER = join(Repository.OBJ_FOLDER, "blobs");
     /** File name. */
-    private String fileName;
+    private final String fileName;
     /** File contents. */
     private final byte[] content;
 
-    public Blob(String fileName) {
-        File file = join(Repository.CWD, fileName);
+    public Blob(String fn) {
+        File file = join(Repository.CWD, fn);
         content = readContents(file);
+        fileName = fn;
     }
 
     public void saveBlob() {
