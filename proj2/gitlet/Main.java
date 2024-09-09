@@ -57,6 +57,24 @@ public class Main {
                 validateNumArgs("status", args, 1);
                 Repository.gitStatus();
                 break;
+            case "checkout":
+                Repository.gitCheckout(args);
+                break;
+            case "branch":
+                validateNumArgs("branch", args, 2);
+                text = args[1];
+                Repository.gitBranch(text);
+                break;
+            case "rm-branch":
+                validateNumArgs("rm-branch", args, 2);
+                text = args[1];
+                Repository.gitRmBranch(text);
+                break;
+            case "reset":
+                validateNumArgs("reset", args, 2);
+                text = args[1];
+                Repository.gitReset(text);
+                break;
             case "test":
                 Repository.test();
                 break;

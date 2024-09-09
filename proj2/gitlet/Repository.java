@@ -326,6 +326,159 @@ public class Repository {
         System.out.println();
     }
 
+    public static void gitCheckout(String[] args) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        int usage = parseChechoutArgs(args);
+        switch (usage) {
+            case 1:
+                checkoutUsage1(args[2]);
+                break;
+            case 2:
+                checkoutUsage2(args[1], args[3]);
+                break;
+            case 3:
+                checkoutUsage3(args[1]);
+                break;
+        }
+    }
+
+    private static int parseChechoutArgs(String[] args) {
+        if (args.length < 2 || args.length > 4) {
+            exitWithMessage("Incorrect operands.");
+        }
+        switch (args.length) {
+            case 3:
+                if (!args[1].equals("--")) {
+                    exitWithMessage("Incorrect operands.");
+                }
+                return 1;
+            case 4:
+                if (!args[2].equals("--")) {
+                    exitWithMessage("Incorrect operands.");
+                }
+                return 2;
+            case 2:
+                return 3;
+        }
+        return 0;
+    }
+
+    private static void checkoutUsage1(String fileName) {
+        getCurrentBranch();
+        checkoutCommitFile(currentBranch.head, fileName);
+    }
+
+    private static void checkoutCommitFile(String commitId, String fileName) {
+        Commit commit = Commit.getCommit(commitId);
+        String blobId = commit.tree.get(fileName);
+        if (blobId == null) {
+            exitWithMessage("File does not exist in that commit.");
+        }
+        Blob blob = Blob.getBlob(blobId);
+        blob.checkout();
+    }
+
+    private static void checkoutUsage2(String commitId, String fileName) {
+        String fullCommitId = checkCommitId(commitId);
+        checkoutCommitFile(fullCommitId, fileName);
+    }
+
+    private static String checkCommitId(String commitId) {
+        List<String> allCommits = plainFilenamesIn(COMMITS_FOLDER);
+        for (String id : allCommits) {
+            if (id.equals(commitId) || id.substring(0, 6).equals(commitId)) {
+                return id;
+            }
+        }
+        exitWithMessage("No commit with that id exists.");
+        return "";
+    }
+
+    private static void checkoutUsage3(String branchName) {
+        if (branchName.equals(currentBranchName)) {
+            exitWithMessage("No need to checkout the current branch.");
+        }
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        if (!allBranches.contains(branchName)) {
+            exitWithMessage("No such branch exists.");
+        }
+
+        File branchFile = join(BRANCHES_FOLDER, branchName);
+        Branch branch = readObject(branchFile, Branch.class);
+        checkoutCommitAll(branch.head);
+        stagingAreaFile.delete();
+        currentBranchName = branchName;
+        setCurrentBranch();
+    }
+
+    private static void checkoutCommitAll(Commit commit) {
+        Commit current = currentBranch.getHeadCommit();
+        Set<String> allFilesTracked = current.tree.keySet();
+
+        for (String f : commit.tree.keySet()) {
+            String blobId = commit.tree.get(f);
+            Blob b = Blob.getBlob(blobId);
+            b.checkout();
+            allFilesTracked.remove(f);
+        }
+
+        for (String f : allFilesTracked) {
+            join(CWD, f).delete();
+        }
+    }
+
+    private static void checkoutCommitAll(String commitId) {
+        checkoutCommitAll(Commit.getCommit(commitId));
+    }
+
+    public static void gitBranch(String branchName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        if (allBranches.contains(branchName)) {
+            exitWithMessage("A branch with that name already exists.");
+        }
+        getCurrentBranch();
+        Branch newBranch = new Branch(branchName, currentBranch.head);
+        newBranch.saveBranch();
+        currentBranchName = branchName;
+        setCurrentBranch();
+    }
+
+    public static void gitRmBranch(String branchName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getCurrentBranch();
+        if (branchName.equals(currentBranchName)) {
+            exitWithMessage("Cannot remove the current branch.");
+        }
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        if (!allBranches.contains(branchName)) {
+            exitWithMessage("A branch with that name does not exist.");
+        }
+        File branchFile = join(BRANCHES_FOLDER, branchName);
+        branchFile.delete();
+    }
+
+    public static void gitReset(String commitId) {
+        String fullCommitId = checkCommitId(commitId);
+        Commit commit = Commit.getCommit(fullCommitId);
+        List<String> untrackedFiles = new LinkedList<>(plainFilenamesIn(CWD));
+        untrackedFiles.removeAll(commit.tree.keySet());
+        if (!untrackedFiles.isEmpty()) {
+            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+        checkoutCommitAll(fullCommitId);
+        getCurrentBranch();
+        currentBranch.head = fullCommitId;
+        currentBranch.saveBranch();
+    }
+
     /* Test. */
     public static void test() {
         // Blob a = new Blob("gitlet-design.md");

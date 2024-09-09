@@ -7,6 +7,8 @@ import static gitlet.Utils.*;
 public class Blob implements Serializable {
     /** Blobs folder. */
     public static final File BLOBS_FOLDER = join(Repository.OBJ_FOLDER, "blobs");
+    /** File name. */
+    private String fileName;
     /** File contents. */
     private final byte[] content;
 
@@ -48,5 +50,10 @@ public class Blob implements Serializable {
 
     public boolean equalsWithContent(String file) {
         return equalsWithContent(join(Repository.CWD, file));
+    }
+
+    public void checkout() {
+        File file = join(Repository.CWD, fileName);
+        writeContents(file, content);
     }
 }
