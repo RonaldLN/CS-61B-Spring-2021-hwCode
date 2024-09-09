@@ -478,32 +478,4 @@ public class Repository {
         currentBranch.head = fullCommitId;
         currentBranch.saveBranch();
     }
-
-    /* Test. */
-    public static void test() {
-        // Blob a = new Blob("gitlet-design.md");
-        // Blob b = new Blob("gitlet-design.md");
-        // System.out.println(a == b);
-        // System.out.println(sha1(serialize(a)));
-        // System.out.println(sha1(serialize(b)));
-        // System.out.println(a.equals(b));
-        // // System.out.println(sha1(a.content));
-        Repository.gitInit();
-        Repository.gitAdd("aaa.md");
-        Repository.gitCommit("001");
-        Repository.gitAdd("aaavv.md");
-        Repository.gitCommit("002");
-        // Repository.gitLog();
-        // Repository.gitGlobalLog();
-        // Repository.gitFind("003");
-        File f = join(CWD, "12345");
-        File f2 = join(CWD, "123456");
-        writeContents(f, "12345");
-        writeContents(f2, "");
-        Repository.gitAdd("12345");
-        Repository.gitAdd("123456");
-        writeContents(f2, "aa");
-        f.delete();
-        Repository.gitStatus();
-    }
 }

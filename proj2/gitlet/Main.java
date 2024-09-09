@@ -75,9 +75,6 @@ public class Main {
                 text = args[1];
                 Repository.gitReset(text);
                 break;
-            case "test":
-                Repository.test();
-                break;
             default:
                 exitWithMessage("No command with that name exists.");
         }
