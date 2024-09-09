@@ -5,6 +5,7 @@ package gitlet;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.io.Serializable;
 import java.io.File;
+import java.util.Locale;
 import java.util.TreeMap;
 import static gitlet.Utils.*;
 
@@ -100,10 +101,14 @@ public class Commit implements Serializable {
             sb.append(secondParent.substring(0, 7));
         }
         sb.append("\nDate: ");
-        sb.append(date);
+        sb.append(formatDate());
         sb.append("\n");
         sb.append(message);
         sb.append("\n");
         return sb.toString();
+    }
+
+    private String formatDate() {
+        return String.format(Locale.ENGLISH, "%ta %tb %te %tT %tY %tz", date, date, date, date, date, date);
     }
 }
