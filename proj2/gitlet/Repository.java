@@ -122,7 +122,7 @@ public class Repository {
             exitWithMessage("Not in an initialized Gitlet directory.");
         }
 
-        if (message.isEmpty()) {
+        if (message.equals("")) {
             exitWithMessage("Please enter a commit message.");
         }
 
@@ -186,7 +186,7 @@ public class Repository {
         getCurrentBranch();
         Commit commit = currentBranch.getHeadCommit();
         while (commit != null) {
-            System.out.println(commit);
+            message(commit.toString());
             commit = commit.getParentCommit();
         }
     }
@@ -199,7 +199,7 @@ public class Repository {
         List<String> allCommits = plainFilenamesIn(COMMITS_FOLDER);
         if (allCommits != null) {
             for (String id : allCommits) {
-                System.out.println(getCommit(id));
+                message(getCommit(id).toString());
             }
         }
     }
@@ -215,7 +215,7 @@ public class Repository {
             for (String id : allCommits) {
                 Commit commit = getCommit(id);
                 if (commit.message.equals(message)) {
-                    System.out.println(commit.getId());
+                    message(commit.getId());
                     notFound = false;
                 }
             }
@@ -246,16 +246,17 @@ public class Repository {
     }
 
     private static void branchesStatus() {
-        System.out.println("=== Branches ===");
+        message("=== Branches ===");
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
         allBranches.sort(new stringComparator());
         for (String b : allBranches) {
             if (b.equals(currentBranchName)) {
-                System.out.print("*");
+                message("*", b);
+            } else {
+                message(b);
             }
-            System.out.println(b);
         }
-        System.out.println();
+        message("");
     }
 
     private static void stageAndRemoveStatus() {
@@ -271,17 +272,17 @@ public class Repository {
         stagedFiles.sort(new stringComparator());
         removedFiles.sort(new stringComparator());
 
-        System.out.println("=== Staged Files ===");
+        message("=== Staged Files ===");
         for (String f : stagedFiles) {
-            System.out.println(f);
+            message(f);
         }
-        System.out.println();
+        message("");
 
-        System.out.println("=== Removed Files ===");
+        message("=== Removed Files ===");
         for (String f : removedFiles) {
-            System.out.println(f);
+            message(f);
         }
-        System.out.println();
+        message("");
     }
 
     private static void modifiedAndUntrackedStatus() {
@@ -304,26 +305,25 @@ public class Repository {
             }
         }
 
-        System.out.println("=== Modifications Not Staged For Commit ===");
+        message("=== Modifications Not Staged For Commit ===");
         for (String f : modifiedNotStaged.keySet()) {
-            System.out.print(f);
             switch (modifiedNotStaged.get(f)) {
                 case 0:
-                    System.out.println(" (modified)");
+                    message(f, " (modified)");
                     break;
                 case 1:
-                    System.out.println(" (deleted)");
+                    message(f, " (deleted)");
                     break;
             }
         }
-        System.out.println();
+        message("");
 
         allFiles.sort(new stringComparator());
-        System.out.println("=== Untracked Files ===");
+        message("=== Untracked Files ===");
         for (String f : allFiles) {
-            System.out.println(f);
+            message(f);
         }
-        System.out.println();
+        message("");
     }
 
     public static void gitCheckout(String[] args) {
