@@ -38,14 +38,15 @@ public class Repository {
     /** Current branch. */
     private static String currentBranchName;
     private static Branch currentBranch;
-    private static final File currentBranchNameFile = join(GITLET_DIR, "currentBranchName");
+    private static final File CURRENT_BRANCH_NAME_FILE = join(GITLET_DIR, "currentBranchName");
     /** Staging Area. */
-    private static final File stagingAreaFile = join(GITLET_DIR, "stagingArea");
+    private static final File STAGING_AREA_FILE = join(GITLET_DIR, "stagingArea");
 
     /** Creates a new Gitlet version-control system in the current directory. */
     public static void gitInit() {
         if (GITLET_DIR.exists()) {
-            exitWithMessage("A Gitlet version-control system already exists in the current directory.");
+            exitWithMessage(
+                    "A Gitlet version-control system already exists in the current directory.");
         }
 
         GITLET_DIR.mkdir();
@@ -64,11 +65,11 @@ public class Repository {
     }
 
     private static void setCurrentBranch() {
-        writeObject(currentBranchNameFile, currentBranchName);
+        writeObject(CURRENT_BRANCH_NAME_FILE, currentBranchName);
     }
 
     private static void getCurrentBranch() {
-        currentBranchName = readObject(currentBranchNameFile, String.class);
+        currentBranchName = readObject(CURRENT_BRANCH_NAME_FILE, String.class);
         File currentBranchFile = join(BRANCHES_FOLDER, currentBranchName);
         currentBranch = readObject(currentBranchFile, Branch.class);
     }
@@ -87,8 +88,8 @@ public class Repository {
 
         getCurrentBranch();
         Commit headCommit = currentBranch.getHeadCommit();
-        if (headCommit.tree.containsKey(fileName)) {
-            String lastBlobId = headCommit.tree.get(fileName);
+        if (headCommit.getTree().containsKey(fileName)) {
+            String lastBlobId = headCommit.getTree().get(fileName);
             Blob last = getBlob(lastBlobId);
             if (last.equals(blob)) {
                 return;
@@ -106,15 +107,15 @@ public class Repository {
     }
 
     private static void getStagingArea() {
-        if (stagingAreaFile.exists()) {
-            stagingArea = readObject(stagingAreaFile, TreeMap.class);
+        if (STAGING_AREA_FILE.exists()) {
+            stagingArea = readObject(STAGING_AREA_FILE, TreeMap.class);
         } else {
             stagingArea = new TreeMap<>();
         }
     }
 
     private static void saveStagingArea() {
-        writeObject(stagingAreaFile, stagingArea);
+        writeObject(STAGING_AREA_FILE, stagingArea);
     }
 
     public static void gitCommit(String message) {
@@ -133,12 +134,12 @@ public class Repository {
 
         getCurrentBranch();
         Commit head = currentBranch.getHeadCommit();
-        Commit newCommit = new Commit(message, currentBranch.head);
-        newCommit.tree.putAll(head.tree);
+        Commit newCommit = new Commit(message, currentBranch.getHeadId());
+        newCommit.getTree().putAll(head.getTree());
         stageToCommit(newCommit);
-        stagingAreaFile.delete();
+        STAGING_AREA_FILE.delete();
 
-        currentBranch.head = newCommit.getId();
+        currentBranch.setHead(newCommit.getId());
         newCommit.saveCommit();
         currentBranch.saveBranch();
     }
@@ -151,7 +152,7 @@ public class Repository {
         getStagingArea();
         getCurrentBranch();
         Commit head = currentBranch.getHeadCommit();
-        if (!stagingArea.containsKey(fileName) && !head.tree.containsKey(fileName)) {
+        if (!stagingArea.containsKey(fileName) && !head.getTree().containsKey(fileName)) {
             exitWithMessage("No reason to remove the file.");
         }
         String blobId = stagingArea.remove(fileName);
@@ -159,7 +160,7 @@ public class Repository {
             File blobFile = join(BLOBS_FOLDER, blobId);
             blobFile.delete();
         }
-        if (head.tree.containsKey(fileName)) {
+        if (head.getTree().containsKey(fileName)) {
             stagingArea.put(fileName, "removal");
         }
         saveStagingArea();
@@ -171,9 +172,9 @@ public class Repository {
         for (String key : stagingArea.keySet()) {
             String blobId = stagingArea.get(key);
             if (blobId.equals("removal")) {
-                commit.tree.remove(key);
+                commit.getTree().remove(key);
             } else {
-                commit.tree.put(key, blobId);
+                commit.getTree().put(key, blobId);
             }
         }
     }
@@ -214,7 +215,7 @@ public class Repository {
         if (allCommits != null) {
             for (String id : allCommits) {
                 Commit commit = getCommit(id);
-                if (commit.message.equals(message)) {
+                if (commit.getMessage().equals(message)) {
                     message(commit.getId());
                     notFound = false;
                 }
@@ -238,7 +239,7 @@ public class Repository {
         modifiedAndUntrackedStatus();
     }
 
-    private static class stringComparator implements Comparator<String> {
+    private static class StringComparator implements Comparator<String> {
         @Override
         public int compare(String o1, String o2) {
             return o1.compareTo(o2);
@@ -248,7 +249,7 @@ public class Repository {
     private static void branchesStatus() {
         message("=== Branches ===");
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
-        allBranches.sort(new stringComparator());
+        allBranches.sort(new StringComparator());
         for (String b : allBranches) {
             if (b.equals(currentBranchName)) {
                 message("*%s", b);
@@ -269,8 +270,8 @@ public class Repository {
                 stagedFiles.add(key);
             }
         }
-        stagedFiles.sort(new stringComparator());
-        removedFiles.sort(new stringComparator());
+        stagedFiles.sort(new StringComparator());
+        removedFiles.sort(new StringComparator());
 
         message("=== Staged Files ===");
         for (String f : stagedFiles) {
@@ -287,15 +288,17 @@ public class Repository {
 
     private static void modifiedAndUntrackedStatus() {
         Commit head = currentBranch.getHeadCommit();
-        TreeMap<String, String> stagedFiles = new TreeMap<>(head.tree);
+        TreeMap<String, String> stagedFiles = new TreeMap<>(head.getTree());
         stagedFiles.putAll(stagingArea);
 
         List<String> allFiles = new LinkedList<>(plainFilenamesIn(CWD));
-        TreeMap<String, Integer> modifiedNotStaged = new TreeMap<>(new stringComparator());
+        TreeMap<String, Integer> modifiedNotStaged = new TreeMap<>(new StringComparator());
 
         for (String f : stagedFiles.keySet()) {
             boolean res = allFiles.remove(f);
-            if (!res) {
+            if (!res && !stagedFiles.containsKey(f)) {
+                continue;
+            } else if (!res) {
                 modifiedNotStaged.put(f, 1);
                 continue;
             }
@@ -314,11 +317,13 @@ public class Repository {
                 case 1:
                     message("%s (deleted)", f);
                     break;
+                default:
+                    break;
             }
         }
         message("");
 
-        allFiles.sort(new stringComparator());
+        allFiles.sort(new StringComparator());
         message("=== Untracked Files ===");
         for (String f : allFiles) {
             message(f);
@@ -341,6 +346,8 @@ public class Repository {
             case 3:
                 checkoutUsage3(args[1]);
                 break;
+            default:
+                break;
         }
     }
 
@@ -361,18 +368,20 @@ public class Repository {
                 return 2;
             case 2:
                 return 3;
+            default:
+                break;
         }
         return 0;
     }
 
     private static void checkoutUsage1(String fileName) {
         getCurrentBranch();
-        checkoutCommitFile(currentBranch.head, fileName);
+        checkoutCommitFile(currentBranch.getHeadId(), fileName);
     }
 
     private static void checkoutCommitFile(String commitId, String fileName) {
         Commit commit = Commit.getCommit(commitId);
-        String blobId = commit.tree.get(fileName);
+        String blobId = commit.getTree().get(fileName);
         if (blobId == null) {
             exitWithMessage("File does not exist in that commit.");
         }
@@ -407,18 +416,18 @@ public class Repository {
 
         File branchFile = join(BRANCHES_FOLDER, branchName);
         Branch branch = readObject(branchFile, Branch.class);
-        checkoutCommitAll(branch.head);
-        stagingAreaFile.delete();
+        checkoutCommitAll(branch.getHeadId());
+        STAGING_AREA_FILE.delete();
         currentBranchName = branchName;
         setCurrentBranch();
     }
 
     private static void checkoutCommitAll(Commit commit) {
         Commit current = currentBranch.getHeadCommit();
-        Set<String> allFilesTracked = current.tree.keySet();
+        Set<String> allFilesTracked = current.getTree().keySet();
 
-        for (String f : commit.tree.keySet()) {
-            String blobId = commit.tree.get(f);
+        for (String f : commit.getTree().keySet()) {
+            String blobId = commit.getTree().get(f);
             Blob b = Blob.getBlob(blobId);
             b.checkout();
             allFilesTracked.remove(f);
@@ -443,7 +452,7 @@ public class Repository {
             exitWithMessage("A branch with that name already exists.");
         }
         getCurrentBranch();
-        Branch newBranch = new Branch(branchName, currentBranch.head);
+        Branch newBranch = new Branch(branchName, currentBranch.getHeadId());
         newBranch.saveBranch();
         currentBranchName = branchName;
         setCurrentBranch();
@@ -469,13 +478,14 @@ public class Repository {
         String fullCommitId = checkCommitId(commitId);
         Commit commit = Commit.getCommit(fullCommitId);
         List<String> untrackedFiles = new LinkedList<>(plainFilenamesIn(CWD));
-        untrackedFiles.removeAll(commit.tree.keySet());
+        untrackedFiles.removeAll(commit.getTree().keySet());
         if (!untrackedFiles.isEmpty()) {
-            exitWithMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+            exitWithMessage("There is an untracked file in the way;" +
+                    " delete it, or add and commit it first.");
         }
         checkoutCommitAll(fullCommitId);
         getCurrentBranch();
-        currentBranch.head = fullCommitId;
+        currentBranch.setHead(fullCommitId);
         currentBranch.saveBranch();
     }
 }

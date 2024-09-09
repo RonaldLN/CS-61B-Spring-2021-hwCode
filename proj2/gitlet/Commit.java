@@ -6,6 +6,7 @@ import java.util.Date; // TODO: You'll likely use this in this class
 import java.io.Serializable;
 import java.io.File;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TreeMap;
 import static gitlet.Utils.*;
 
@@ -25,7 +26,7 @@ public class Commit implements Serializable {
      */
 
     /** The message of this Commit. */
-    public final String message;
+    private final String message;
 
     /* TODO: fill in the rest of this class. */
 
@@ -38,7 +39,7 @@ public class Commit implements Serializable {
     private String parent;
     private String secondParent;
     /** A mapping of file names to blob references. */
-    public TreeMap<String, String> tree;
+    private final TreeMap<String, String> tree;
 
     public Commit(String msg, String p) {
         message = msg;
@@ -109,6 +110,20 @@ public class Commit implements Serializable {
     }
 
     private String formatDate() {
-        return String.format(Locale.ENGLISH, "%ta %tb %te %tT %tY %tz", date, date, date, date, date, date);
+        return String.format(Locale.ENGLISH, "%ta %tb %te %tT %tY %tz",
+                date, date, date, date, date, date);
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public TreeMap<String, String> getTree() {
+        return tree;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message, date, parent, secondParent, tree);
     }
 }

@@ -2,6 +2,9 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
+
 import static gitlet.Utils.*;
 
 public class Blob implements Serializable {
@@ -43,6 +46,11 @@ public class Blob implements Serializable {
         }
         Blob b = (Blob) obj;
         return b.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileName, Arrays.hashCode(content));
     }
 
     public boolean equalsWithContent(File file) {

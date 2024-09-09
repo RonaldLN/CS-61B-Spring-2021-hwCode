@@ -9,9 +9,9 @@ public class Branch implements Serializable {
     /** Branches folder. */
     public static final File BRANCHES_FOLDER = join(Repository.GITLET_DIR, "branches");
     /** Branch name. */
-    public String name;
+    private final String name;
     /** The head commit of this branch. */
-    public String head;
+    private String head;
 
     public Branch(String n, String h) {
         name = n;
@@ -22,6 +22,14 @@ public class Branch implements Serializable {
     public void saveBranch() {
         File branchFile = join(BRANCHES_FOLDER, name);
         writeObject(branchFile, this);
+    }
+
+    public String getHeadId() {
+        return head;
+    }
+
+    public void setHead(String id) {
+        head = id;
     }
 
     public Commit getHeadCommit() {
