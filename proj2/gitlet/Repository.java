@@ -251,7 +251,7 @@ public class Repository {
         allBranches.sort(new stringComparator());
         for (String b : allBranches) {
             if (b.equals(currentBranchName)) {
-                message("*", b);
+                message("*%s", b);
             } else {
                 message(b);
             }
@@ -309,10 +309,10 @@ public class Repository {
         for (String f : modifiedNotStaged.keySet()) {
             switch (modifiedNotStaged.get(f)) {
                 case 0:
-                    message(f, " (modified)");
+                    message("%s (modified)", f);
                     break;
                 case 1:
-                    message(f, " (deleted)");
+                    message("%s (deleted)", f);
                     break;
             }
         }
