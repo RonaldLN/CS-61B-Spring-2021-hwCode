@@ -294,15 +294,19 @@ public class Repository {
         List<String> allFiles = new LinkedList<>(plainFilenamesIn(CWD));
         TreeMap<String, Integer> modifiedNotStaged = new TreeMap<>(new StringComparator());
 
-        for (String f : stagedFiles.keySet()) {
+        for (Map.Entry<String, String> entry : stagedFiles.entrySet()) {
+            String f = entry.getKey();
+            String value = entry.getValue();
+
             boolean res = allFiles.remove(f);
-            if (!res && !stagedFiles.containsKey(f)) {
-                continue;
-            } else if (!res) {
-                modifiedNotStaged.put(f, 1);
+            if (!res) {
+                if (stagedFiles.containsKey(f) && !value.equals("removal")) {
+                    modifiedNotStaged.put(f, 1);
+                }
                 continue;
             }
-            Blob b = Blob.getBlob(stagedFiles.get(f));
+
+            Blob b = Blob.getBlob(value);
             if (!b.equalsWithContent(f)) {
                 modifiedNotStaged.put(f, 0);
             }
