@@ -335,7 +335,7 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             exitWithMessage("Not in an initialized Gitlet directory.");
         }
-        int usage = parseChechoutArgs(args);
+        int usage = parseCheckoutArgs(args);
         switch (usage) {
             case 1:
                 checkoutUsage1(args[2]);
@@ -351,7 +351,7 @@ public class Repository {
         }
     }
 
-    private static int parseChechoutArgs(String[] args) {
+    private static int parseCheckoutArgs(String[] args) {
         if (args.length < 2 || args.length > 4) {
             exitWithMessage("Incorrect operands.");
         }

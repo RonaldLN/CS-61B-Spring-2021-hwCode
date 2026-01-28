@@ -33,7 +33,7 @@ public class Commit implements Serializable {
     /** Commits folder. */
     public static final File COMMITS_FOLDER = join(Repository.OBJ_FOLDER, "commits");
 
-    /** The commit date and the auther of this Commit. */
+    /** The commit date and the author of this Commit. */
     private Date date;
     /** The parent commits' ids. */
     private String parent;
