@@ -87,16 +87,28 @@ public class Repository {
         Blob blob = new Blob(fileName);
 
         getCurrentBranch();
+        getStagingArea();
         Commit headCommit = currentBranch.getHeadCommit();
         if (headCommit.getTree().containsKey(fileName)) {
             String lastBlobId = headCommit.getTree().get(fileName);
             Blob last = getBlob(lastBlobId);
             if (last.equals(blob)) {
+                // File identical to HEAD version -> clean staging operations
+                // 1. Remove `removal` mark -> undo rm
+                // 2. Delete staging blob -> avoid re-add
+                if (stagingArea.containsKey(fileName)) {
+                    String blobId = stagingArea.remove(fileName);
+                    if (!blobId.equals("removal")) {
+                        File blobFile = join(BLOBS_FOLDER, blobId);
+                        blobFile.delete();
+                    }
+                    saveStagingArea();
+                }
+
                 return;
             }
         }
 
-        getStagingArea();
         if (stagingArea.containsKey(fileName)) {
             File oldBlob = join(BLOBS_FOLDER, stagingArea.get(fileName));
             oldBlob.delete();
@@ -162,10 +174,10 @@ public class Repository {
         }
         if (head.getTree().containsKey(fileName)) {
             stagingArea.put(fileName, "removal");
+            File file = join(CWD, fileName);
+            file.delete();
         }
         saveStagingArea();
-        File file = join(CWD, fileName);
-        file.delete();
     }
 
     private static void stageToCommit(Commit commit) {
