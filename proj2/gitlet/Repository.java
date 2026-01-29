@@ -300,19 +300,19 @@ public class Repository {
 
     private static void modifiedAndUntrackedStatus() {
         Commit head = currentBranch.getHeadCommit();
-        TreeMap<String, String> stagedFiles = new TreeMap<>(head.getTree());
-        stagedFiles.putAll(stagingArea);
+        TreeMap<String, String> trackedFiles = new TreeMap<>(head.getTree());
+        trackedFiles.putAll(stagingArea);
 
         List<String> allFiles = new LinkedList<>(plainFilenamesIn(CWD));
         TreeMap<String, Integer> modifiedNotStaged = new TreeMap<>(new StringComparator());
 
-        for (Map.Entry<String, String> entry : stagedFiles.entrySet()) {
+        for (Map.Entry<String, String> entry : trackedFiles.entrySet()) {
             String f = entry.getKey();
             String value = entry.getValue();
 
             boolean res = allFiles.remove(f);
             if (!res) {
-                if (stagedFiles.containsKey(f) && !value.equals("removal")) {
+                if (trackedFiles.containsKey(f) && !value.equals("removal")) {
                     modifiedNotStaged.put(f, 1);
                 }
                 continue;
@@ -422,6 +422,7 @@ public class Repository {
     }
 
     private static void checkoutUsage3(String branchName) {
+        getCurrentBranch();
         if (branchName.equals(currentBranchName)) {
             exitWithMessage("No need to checkout the current branch.");
         }
@@ -430,32 +431,57 @@ public class Repository {
             exitWithMessage("No such branch exists.");
         }
 
+        getStagingArea();
         File branchFile = join(BRANCHES_FOLDER, branchName);
         Branch branch = readObject(branchFile, Branch.class);
-        checkoutCommitAll(branch.getHeadId());
-        STAGING_AREA_FILE.delete();
+        checkoutCommitAllWithCheck(branch.getHeadId());
+        cleanStagingArea();
         currentBranchName = branchName;
         setCurrentBranch();
     }
 
-    private static void checkoutCommitAll(Commit commit) {
+    private static void checkoutCommitAllWithCheck(Commit commit) {
         Commit current = currentBranch.getHeadCommit();
-        Set<String> allFilesTracked = current.getTree().keySet();
 
-        for (String f : commit.getTree().keySet()) {
-            String blobId = commit.getTree().get(f);
-            Blob b = Blob.getBlob(blobId);
-            b.checkout();
-            allFilesTracked.remove(f);
+        TreeMap<String, String> trackedFiles = new TreeMap<>(current.getTree());
+        trackedFiles.putAll(stagingArea);
+
+        List<String> untrackedFiles = new LinkedList<>(plainFilenamesIn(CWD));
+        untrackedFiles.removeAll(trackedFiles.keySet());
+
+        TreeMap<String, String> targetTrackedFiles = new TreeMap<>(commit.getTree());
+
+        untrackedFiles.retainAll(targetTrackedFiles.keySet());
+        if (!untrackedFiles.isEmpty()) {
+            exitWithMessage("There is an untracked file in the way;"
+                + " delete it, or add and commit it first.");
         }
 
-        for (String f : allFilesTracked) {
+        TreeMap<String, String> restTrackedFiles = new TreeMap<>(trackedFiles);
+        for (Map.Entry<String, String> entry : targetTrackedFiles.entrySet()) {
+            Blob b = Blob.getBlob(entry.getValue());
+            b.checkout();
+
+            String fileName = entry.getKey();
+            restTrackedFiles.remove(fileName);
+        }
+        for (String f : restTrackedFiles.keySet()) {
             join(CWD, f).delete();
         }
     }
 
-    private static void checkoutCommitAll(String commitId) {
-        checkoutCommitAll(Commit.getCommit(commitId));
+    private static void checkoutCommitAllWithCheck(String commitId) {
+        checkoutCommitAllWithCheck(Commit.getCommit(commitId));
+    }
+
+    private static void cleanStagingArea() {
+        for (String blobId : stagingArea.values()) {
+            if (!blobId.equals("removal")) {
+                File blobFile = join(BLOBS_FOLDER, blobId);
+                blobFile.delete();
+            }
+        }
+        STAGING_AREA_FILE.delete();
     }
 
     public static void gitBranch(String branchName) {
@@ -491,15 +517,15 @@ public class Repository {
     }
 
     public static void gitReset(String commitId) {
-        String fullCommitId = checkCommitId(commitId);
-        Commit commit = Commit.getCommit(fullCommitId);
-        List<String> untrackedFiles = new LinkedList<>(plainFilenamesIn(CWD));
-        untrackedFiles.removeAll(commit.getTree().keySet());
-        if (!untrackedFiles.isEmpty()) {
-            exitWithMessage("There is an untracked file in the way;" +
-                    " delete it, or add and commit it first.");
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
         }
-        checkoutCommitAll(fullCommitId);
+
+        getCurrentBranch();
+        getStagingArea();
+        String fullCommitId = checkCommitId(commitId);
+        checkoutCommitAllWithCheck(fullCommitId);
+        cleanStagingArea();
         getCurrentBranch();
         currentBranch.setHead(fullCommitId);
         currentBranch.saveBranch();
