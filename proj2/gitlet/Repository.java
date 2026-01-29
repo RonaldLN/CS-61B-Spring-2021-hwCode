@@ -496,8 +496,6 @@ public class Repository {
         getCurrentBranch();
         Branch newBranch = new Branch(branchName, currentBranch.getHeadId());
         newBranch.saveBranch();
-        currentBranchName = branchName;
-        setCurrentBranch();
     }
 
     public static void gitRmBranch(String branchName) {
