@@ -673,7 +673,13 @@ public class Repository {
 
         for (String f : filesToStage) {
             String blobId = targetTree.get(f);
-            stagingArea.put(f, blobId == null ? "removal" : blobId);
+            if (blobId == null) {
+                join(CWD, f).delete();
+                stagingArea.put(f, "removal");
+            } else {
+                Blob.getBlob(blobId).checkout();
+                stagingArea.put(f, blobId);
+            }
         }
 
         if (conflictFiles.isEmpty()) {
