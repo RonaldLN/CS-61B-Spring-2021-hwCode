@@ -11,7 +11,6 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         if (args.length == 0) {
             exitWithMessage("Please enter a command.");
         }
@@ -19,17 +18,14 @@ public class Main {
         String text;
         switch(firstArg) {
             case "init":
-                // TODO: handle the `init` command
                 validateNumArgs("init", args, 1);
                 Repository.gitInit();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
                 validateNumArgs("add", args, 2);
                 text = args[1];
                 Repository.gitAdd(text);
                 break;
-            // TODO: FILL THE REST IN
             case "commit":
                 validateNumArgs("commit", args, 2);
                 text = args[1];

@@ -1,8 +1,6 @@
 package gitlet;
 
-// TODO: any imports you need here
-
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Date;
 import java.io.Serializable;
 import java.io.File;
 import java.util.Locale;
@@ -11,15 +9,13 @@ import java.util.TreeMap;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
+ *  This class encapsulates the core data structure of a commit in the Gitlet
+ *  version control system, including metadata such as commit message, timestamp,
+ *  parent references, and a snapshot of tracked files through blob references.
+ *  @author Ronald LUO
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
@@ -27,8 +23,6 @@ public class Commit implements Serializable {
 
     /** The message of this Commit. */
     private final String message;
-
-    /* TODO: fill in the rest of this class. */
 
     /** Commits folder. */
     public static final File COMMITS_FOLDER = join(Repository.OBJ_FOLDER, "commits");

@@ -3,22 +3,19 @@ package gitlet;
 import java.io.File;
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
 import static gitlet.Commit.*;
 import static gitlet.Blob.*;
 import static gitlet.Branch.*;
 import java.util.*;
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
+ *  This class serves as the central controller for Gitlet operations, managing
+ *  the repository structure, staging area, branches, and providing core
+ *  version control functionalities such as commit, checkout, merge, and status.
+ *  @author Ronald LUO
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided two examples for you.
@@ -28,8 +25,6 @@ public class Repository {
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-
-    /* TODO: fill in the rest of this class. */
 
     /** Folder that blobs and commits are saved in. */
     public static final File OBJ_FOLDER = join(GITLET_DIR, "objects");
@@ -413,7 +408,7 @@ public class Repository {
     private static String checkCommitId(String commitId) {
         List<String> allCommits = plainFilenamesIn(COMMITS_FOLDER);
         for (String id : allCommits) {
-            if (id.equals(commitId) || id.substring(0, 6).equals(commitId)) {
+            if (id.equals(commitId) || id.startsWith(commitId)) {
                 return id;
             }
         }
