@@ -183,9 +183,7 @@ public class Repository {
     private static void stageToCommit(Commit commit) {
         for (String key : stagingArea.keySet()) {
             String blobId = stagingArea.get(key);
-            if (key.equals("second parent")) {
-                commit.setSecondParent(blobId);
-            } else if (blobId.equals("removal")) {
+            if (blobId.equals("removal")) {
                 commit.getTree().remove(key);
             } else {
                 commit.getTree().put(key, blobId);
@@ -602,7 +600,9 @@ public class Repository {
         return null;
     }
 
-    private static String expandSearch(Queue<String> queue, Set<String> visitedThis, Set<String> visitedOther) {
+    private static String expandSearch(Queue<String> queue,
+                                       Set<String> visitedThis,
+                                       Set<String> visitedOther) {
         int size = queue.size();
         for (int i = 0; i < size; i++) {
             String currentID = queue.poll();
@@ -626,11 +626,13 @@ public class Repository {
         return null;
     }
 
-    private static void dealWithThreeCommit(String branchName, String currentHeadId, String targetHeadId, String splitPointId) {
+    private static void dealWithThreeCommit(String branchName,
+                                            String currentHeadId,
+                                            String targetHeadId,
+                                            String splitPointId) {
         Commit currentHead = Commit.getCommit(currentHeadId);
         Commit targetHead = Commit.getCommit(targetHeadId);
         Commit splitPoint = Commit.getCommit(splitPointId);
-
         TreeMap<String, String> currentTree = currentHead.getTree();
         TreeMap<String, String> targetTree = targetHead.getTree();
 
@@ -673,49 +675,40 @@ public class Repository {
 
         for (String f : filesToStage) {
             String blobId = targetTree.get(f);
-            if (blobId == null) {
-                join(CWD, f).delete();
-                stagingArea.put(f, "removal");
-            } else {
-                Blob.getBlob(blobId).checkout();
-                stagingArea.put(f, blobId);
-            }
+            stagingArea.put(f, blobId == null ? "removal" : blobId);
         }
+        Commit mergeCommit = new Commit(String.format("Merged %s into %s.",
+                branchName, currentBranchName), currentHeadId, targetHeadId);
+        mergeCommit.getTree().putAll(currentTree);
+        stageToCommit(mergeCommit);
+        STAGING_AREA_FILE.delete();
+        checkoutCommitAllWithCheck(mergeCommit);
+        currentBranch.setHead(mergeCommit.getId());
+        mergeCommit.saveCommit();
+        currentBranch.saveBranch();
 
-        if (conflictFiles.isEmpty()) {
-            Commit mergeCommit = new Commit(String.format("Merged %s into %s.", branchName, currentBranchName), currentHeadId, targetHeadId);
-            mergeCommit.getTree().putAll(currentTree);
-            stageToCommit(mergeCommit);
-            STAGING_AREA_FILE.delete();
-            currentBranch.setHead(mergeCommit.getId());
-            mergeCommit.saveCommit();
-            currentBranch.saveBranch();
-        } else {
-            for (String f : conflictFiles) {
-                String currentContent = "";
-                String targetContent = "";
-                String currentBlobId = currentTree.get(f);
-                String targetBlobId = targetTree.get(f);
-                if (currentBlobId != null) {
-                    currentContent = new String(Blob.getBlob(currentBlobId).getContent());
-                }
-                if (targetBlobId != null) {
-                    targetContent = new String(Blob.getBlob(targetBlobId).getContent());
-                }
-                StringBuilder sb = new StringBuilder();
-                sb.append("<<<<<<< HEAD\n");
-                sb.append(currentContent);
-                sb.append("=======\n");
-                sb.append(targetContent);
-                sb.append(">>>>>>>\n");
-                writeContents(join(Repository.CWD, f), sb.toString());
+        for (String f : conflictFiles) {
+            String currentContent = "";
+            String targetContent = "";
+            String currentBlobId = currentTree.get(f);
+            String targetBlobId = targetTree.get(f);
+            if (currentBlobId != null) {
+                currentContent = new String(Blob.getBlob(currentBlobId).getContent());
             }
-            stagingArea.put("second parent", targetHeadId);
+            if (targetBlobId != null) {
+                targetContent = new String(Blob.getBlob(targetBlobId).getContent());
+            }
+            String conflictContent = String.format("<<<<<<< HEAD\n%s=======\n%s>>>>>>>\n",
+                    currentContent, targetContent);
+            writeContents(join(Repository.CWD, f), conflictContent);
+        }
+        if (!conflictFiles.isEmpty()) {
             exitWithMessage("Encountered a merge conflict.");
         }
     }
 
-    private static Map<String, Set<String>> compareCommitWithAncestor(Commit descendant, Commit ancestor) {
+    private static Map<String, Set<String>> compareCommitWithAncestor(Commit descendant,
+                                                                      Commit ancestor) {
         TreeMap<String, String> descendantTree = new TreeMap<>(descendant.getTree());
         TreeMap<String, String> ancestorTree = new TreeMap<>(ancestor.getTree());
         Set<String> allKeys = new HashSet<>(descendantTree.keySet());

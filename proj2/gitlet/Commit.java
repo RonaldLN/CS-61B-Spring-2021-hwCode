@@ -37,7 +37,7 @@ public class Commit implements Serializable {
     private final Date date;
     /** The parent commits' ids. */
     private final String parent;
-    private String secondParent;
+    private final String secondParent;
     /** A mapping of file names to blob references. */
     private final TreeMap<String, String> tree;
 
@@ -83,10 +83,6 @@ public class Commit implements Serializable {
 
     public Commit getSecondParentCommit() {
         return secondParent == null ? null : getCommit(secondParent);
-    }
-
-    public void setSecondParent(String p) {
-        secondParent = p;
     }
 
     @Override
