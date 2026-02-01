@@ -695,22 +695,23 @@ public class Repository {
                 String currentContent = "";
                 String targetContent = "";
                 String currentBlobId = currentTree.get(f);
-                String targetBlobId = currentTree.get(f);
+                String targetBlobId = targetTree.get(f);
                 if (currentBlobId != null) {
-                    currentContent = Arrays.toString(Blob.getBlob(currentBlobId).getContent());
+                    currentContent = new String(Blob.getBlob(currentBlobId).getContent());
                 }
                 if (targetBlobId != null) {
-                    targetContent = Arrays.toString(Blob.getBlob(targetBlobId).getContent());
+                    targetContent = new String(Blob.getBlob(targetBlobId).getContent());
                 }
                 StringBuilder sb = new StringBuilder();
                 sb.append("<<<<<<< HEAD\n");
                 sb.append(currentContent);
                 sb.append("=======\n");
                 sb.append(targetContent);
-                sb.append(">>>>>>>");
+                sb.append(">>>>>>>\n");
                 writeContents(join(Repository.CWD, f), sb.toString());
             }
             stagingArea.put("second parent", targetHeadId);
+            exitWithMessage("Encountered a merge conflict.");
         }
     }
 
