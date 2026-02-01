@@ -677,6 +677,12 @@ public class Repository {
             String blobId = targetTree.get(f);
             stagingArea.put(f, blobId == null ? "removal" : blobId);
         }
+        for (String f : conflictFiles) {
+            writeConflictFile(f, currentTree, targetTree);
+            Blob b = new Blob(f);
+            b.saveBlob();
+            stagingArea.put(f, b.getId());
+        }
         Commit mergeCommit = new Commit(String.format("Merged %s into %s.",
                 branchName, currentBranchName), currentHeadId, targetHeadId);
         mergeCommit.getTree().putAll(currentTree);
@@ -687,24 +693,27 @@ public class Repository {
         mergeCommit.saveCommit();
         currentBranch.saveBranch();
 
-        for (String f : conflictFiles) {
-            String currentContent = "";
-            String targetContent = "";
-            String currentBlobId = currentTree.get(f);
-            String targetBlobId = targetTree.get(f);
-            if (currentBlobId != null) {
-                currentContent = new String(Blob.getBlob(currentBlobId).getContent());
-            }
-            if (targetBlobId != null) {
-                targetContent = new String(Blob.getBlob(targetBlobId).getContent());
-            }
-            String conflictContent = String.format("<<<<<<< HEAD\n%s=======\n%s>>>>>>>\n",
-                    currentContent, targetContent);
-            writeContents(join(Repository.CWD, f), conflictContent);
-        }
         if (!conflictFiles.isEmpty()) {
             exitWithMessage("Encountered a merge conflict.");
         }
+    }
+
+    private static void writeConflictFile(String fileName,
+                                          TreeMap<String, String> currentTree,
+                                          TreeMap<String, String> targetTree) {
+        String currentContent = "";
+        String targetContent = "";
+        String currentBlobId = currentTree.get(fileName);
+        String targetBlobId = targetTree.get(fileName);
+        if (currentBlobId != null) {
+            currentContent = new String(Blob.getBlob(currentBlobId).getContent());
+        }
+        if (targetBlobId != null) {
+            targetContent = new String(Blob.getBlob(targetBlobId).getContent());
+        }
+        String conflictContent = String.format("<<<<<<< HEAD\n%s=======\n%s>>>>>>>\n",
+                currentContent, targetContent);
+        writeContents(join(Repository.CWD, fileName), conflictContent);
     }
 
     private static Map<String, Set<String>> compareCommitWithAncestor(Commit descendant,
