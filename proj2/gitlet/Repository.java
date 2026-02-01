@@ -677,6 +677,7 @@ public class Repository {
             String blobId = targetTree.get(f);
             stagingArea.put(f, blobId == null ? "removal" : blobId);
         }
+        checkUntrackedFilesInMerge();
         for (String f : conflictFiles) {
             writeConflictFile(f, currentTree, targetTree);
             Blob b = new Blob(f);
@@ -695,6 +696,17 @@ public class Repository {
 
         if (!conflictFiles.isEmpty()) {
             exitWithMessage("Encountered a merge conflict.");
+        }
+    }
+
+    private static void checkUntrackedFilesInMerge() {
+        Set<String> untrackedFiles = new HashSet<>(plainFilenamesIn(CWD));
+        untrackedFiles.removeAll(currentBranch.getHeadCommit().getTree().keySet());
+
+        untrackedFiles.retainAll(stagingArea.keySet());
+        if (!untrackedFiles.isEmpty()) {
+            exitWithMessage("There is an untracked file in the way;"
+                    + " delete it, or add and commit it first.");
         }
     }
 
