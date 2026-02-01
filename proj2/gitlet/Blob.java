@@ -36,6 +36,10 @@ public class Blob implements Serializable {
         return sha1(serialize(this));
     }
 
+    public byte[] getContent() {
+        return content;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

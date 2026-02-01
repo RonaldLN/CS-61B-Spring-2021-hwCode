@@ -24,6 +24,12 @@ public class Branch implements Serializable {
         writeObject(branchFile, this);
     }
 
+    /** Get branch in BRANCHES_FOLDER through NAME */
+    public static Branch getBranch(String name) {
+        File branchFile = join(BRANCHES_FOLDER, name);
+        return readObject(branchFile, Branch.class);
+    }
+
     public String getHeadId() {
         return head;
     }

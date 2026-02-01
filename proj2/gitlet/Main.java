@@ -75,6 +75,11 @@ public class Main {
                 text = args[1];
                 Repository.gitReset(text);
                 break;
+            case "merge":
+                validateNumArgs("merge", args, 2);
+                text = args[1];
+                Repository.gitMerge(text);
+                break;
             default:
                 exitWithMessage("No command with that name exists.");
         }

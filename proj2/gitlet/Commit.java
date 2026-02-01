@@ -34,20 +34,24 @@ public class Commit implements Serializable {
     public static final File COMMITS_FOLDER = join(Repository.OBJ_FOLDER, "commits");
 
     /** The commit date and the author of this Commit. */
-    private Date date;
+    private final Date date;
     /** The parent commits' ids. */
-    private String parent;
+    private final String parent;
     private String secondParent;
     /** A mapping of file names to blob references. */
     private final TreeMap<String, String> tree;
 
-    public Commit(String msg, String p) {
+    public Commit(String msg, String p, String p2) {
         message = msg;
         date = new Date();
         date.getTime();
         parent = p;
-        secondParent = null;
+        secondParent = p2;
         tree = new TreeMap<>();
+    }
+
+    public Commit(String msg, String p) {
+        this(msg, p, null);
     }
 
     public static Commit makeInitialCommit() {
@@ -75,6 +79,14 @@ public class Commit implements Serializable {
 
     public Commit getParentCommit() {
         return parent == null ? null : getCommit(parent);
+    }
+
+    public Commit getSecondParentCommit() {
+        return secondParent == null ? null : getCommit(secondParent);
+    }
+
+    public void setSecondParent(String p) {
+        secondParent = p;
     }
 
     @Override

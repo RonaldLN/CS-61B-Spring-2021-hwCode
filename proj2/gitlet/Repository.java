@@ -183,7 +183,9 @@ public class Repository {
     private static void stageToCommit(Commit commit) {
         for (String key : stagingArea.keySet()) {
             String blobId = stagingArea.get(key);
-            if (blobId.equals("removal")) {
+            if (key.equals("second parent")) {
+                commit.setSecondParent(blobId);
+            } else if (blobId.equals("removal")) {
                 commit.getTree().remove(key);
             } else {
                 commit.getTree().put(key, blobId);
@@ -524,8 +526,216 @@ public class Repository {
         String fullCommitId = checkCommitId(commitId);
         checkoutCommitAllWithCheck(fullCommitId);
         cleanStagingArea();
-        getCurrentBranch();
         currentBranch.setHead(fullCommitId);
         currentBranch.saveBranch();
+    }
+
+    public static void gitMerge(String branchName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getStagingArea();
+        if (!stagingArea.isEmpty()) {
+            exitWithMessage("You have uncommitted changes.");
+        }
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        if (!allBranches.contains(branchName)) {
+            exitWithMessage("A branch with that name does not exist.");
+        }
+        getCurrentBranch();
+        if (branchName.equals(currentBranchName)) {
+            exitWithMessage("Cannot merge a branch with itself.");
+        }
+
+        Branch targetBranch = Branch.getBranch(branchName);
+        String currentHeadId = currentBranch.getHeadId();
+        String targetHeadId = targetBranch.getHeadId();
+        String splitPointId = findSplitPoint(currentHeadId, targetHeadId);
+        if (splitPointId.equals(targetHeadId)) {
+            exitWithMessage("Given branch is an ancestor of the current branch.");
+        }
+        if (splitPointId.equals(currentHeadId)) {
+            checkoutCommitAllWithCheck(targetHeadId);
+            currentBranch.setHead(targetHeadId);
+            currentBranch.saveBranch();
+            exitWithMessage("Current branch fast-forwarded.");
+        }
+
+        dealWithThreeCommit(branchName, currentHeadId, targetHeadId, splitPointId);
+    }
+
+    private static String findSplitPoint(String commitAId, String commitBId) {
+        if (commitAId.equals(commitBId)) {
+            return commitAId;
+        }
+
+        Set<String> visitedA = new HashSet<>();
+        Set<String> visitedB = new HashSet<>();
+        Queue<String> queueA = new LinkedList<>();
+        Queue<String> queueB = new LinkedList<>();
+        queueA.offer(commitAId);
+        queueB.offer(commitBId);
+        visitedA.add(commitAId);
+        visitedB.add(commitBId);
+
+        Commit A = Commit.getCommit(commitAId);
+        Commit B = Commit.getCommit(commitBId);
+        if (B.equals(A.getParentCommit()) || B.equals(A.getSecondParentCommit())) {
+            return commitBId;
+        }
+        if (A.equals(B.getParentCommit()) || A.equals(B.getSecondParentCommit())) {
+            return commitAId;
+        }
+
+        while (!queueA.isEmpty() || !queueB.isEmpty()) {
+            String foundA = expandSearch(queueA, visitedA, visitedB);
+            if (foundA != null) {
+                return foundA;
+            }
+
+            String foundB = expandSearch(queueB, visitedB, visitedA);
+            if (foundB != null) {
+                return foundB;
+            }
+        }
+
+        return null;
+    }
+
+    private static String expandSearch(Queue<String> queue, Set<String> visitedThis, Set<String> visitedOther) {
+        int size = queue.size();
+        for (int i = 0; i < size; i++) {
+            String currentID = queue.poll();
+
+            if (visitedOther.contains(currentID)) {
+                return currentID;
+            }
+
+            Commit current = Commit.getCommit(currentID);
+            Commit parent = current.getParentCommit();
+            Commit secondParent = current.getSecondParentCommit();
+            if (parent != null && !visitedThis.contains(parent.getId())) {
+                queue.offer(parent.getId());
+                visitedThis.add(parent.getId());
+            }
+            if (secondParent != null && !visitedThis.contains(secondParent.getId())) {
+                queue.offer(secondParent.getId());
+                visitedThis.add(secondParent.getId());
+            }
+        }
+        return null;
+    }
+
+    private static void dealWithThreeCommit(String branchName, String currentHeadId, String targetHeadId, String splitPointId) {
+        Commit currentHead = Commit.getCommit(currentHeadId);
+        Commit targetHead = Commit.getCommit(targetHeadId);
+        Commit splitPoint = Commit.getCommit(splitPointId);
+
+        TreeMap<String, String> currentTree = currentHead.getTree();
+        TreeMap<String, String> targetTree = targetHead.getTree();
+
+        Map<String, Set<String>> currentDiff = compareCommitWithAncestor(currentHead, splitPoint);
+        Map<String, Set<String>> targetDiff = compareCommitWithAncestor(targetHead, splitPoint);
+
+        Set<String> conflictFiles = new HashSet<>();
+        Set<String> filesToStage = new HashSet<>(targetDiff.get("added"));
+
+        Set<String> commonAddedFiles = new HashSet<>(targetDiff.get("added"));
+        commonAddedFiles.retainAll(currentDiff.get("added"));
+        for (String f : commonAddedFiles) {
+            String currentId = currentTree.get(f);
+            String targetId = targetTree.get(f);
+            if (!currentId.equals(targetId)) {
+                conflictFiles.add(f);
+            }
+            filesToStage.remove(f);
+        }
+
+        filesToStage.addAll(targetDiff.get("modified"));
+        filesToStage.addAll(targetDiff.get("removed"));
+        Set<String> commonModifiedAndRemovedFiles = new HashSet<>(targetDiff.get("modified"));
+        commonModifiedAndRemovedFiles.addAll(targetDiff.get("removed"));
+        Set<String> currentModifiedAndRemovedFiles = new HashSet<>(currentDiff.get("modified"));
+        currentModifiedAndRemovedFiles.addAll(currentDiff.get("removed"));
+        commonModifiedAndRemovedFiles.retainAll(currentModifiedAndRemovedFiles);
+        for (String f : commonModifiedAndRemovedFiles) {
+            String currentId = currentTree.get(f);
+            String targetId = targetTree.get(f);
+            if (currentId == null && targetId == null) {
+                filesToStage.remove(f);
+            } else if (currentId != null && currentId.equals(targetId)) {
+                filesToStage.remove(f);
+            } else {
+                conflictFiles.add(f);
+                filesToStage.remove(f);
+            }
+        }
+
+        for (String f : filesToStage) {
+            String blobId = targetTree.get(f);
+            stagingArea.put(f, blobId == null ? "removal" : blobId);
+        }
+
+        if (conflictFiles.isEmpty()) {
+            Commit mergeCommit = new Commit(String.format("Merged %s into %s.", branchName, currentBranchName), currentHeadId, targetHeadId);
+            mergeCommit.getTree().putAll(currentTree);
+            stageToCommit(mergeCommit);
+            STAGING_AREA_FILE.delete();
+            currentBranch.setHead(mergeCommit.getId());
+            mergeCommit.saveCommit();
+            currentBranch.saveBranch();
+        } else {
+            for (String f : conflictFiles) {
+                String currentContent = "";
+                String targetContent = "";
+                String currentBlobId = currentTree.get(f);
+                String targetBlobId = currentTree.get(f);
+                if (currentBlobId != null) {
+                    currentContent = Arrays.toString(Blob.getBlob(currentBlobId).getContent());
+                }
+                if (targetBlobId != null) {
+                    targetContent = Arrays.toString(Blob.getBlob(targetBlobId).getContent());
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append("<<<<<<< HEAD\n");
+                sb.append(currentContent);
+                sb.append("=======\n");
+                sb.append(targetContent);
+                sb.append(">>>>>>>");
+                writeContents(join(Repository.CWD, f), sb.toString());
+            }
+            stagingArea.put("second parent", targetHeadId);
+        }
+    }
+
+    private static Map<String, Set<String>> compareCommitWithAncestor(Commit descendant, Commit ancestor) {
+        TreeMap<String, String> descendantTree = new TreeMap<>(descendant.getTree());
+        TreeMap<String, String> ancestorTree = new TreeMap<>(ancestor.getTree());
+        Set<String> allKeys = new HashSet<>(descendantTree.keySet());
+        allKeys.addAll(ancestorTree.keySet());
+
+        Set<String> addedFiles = new HashSet<>();
+        Set<String> removedFiles = new HashSet<>();
+        Set<String> modifiedFiles = new HashSet<>();
+        Set<String> unchangedFiles = new HashSet<>();
+        for (String k : allKeys) {
+            String valueInDescendant = descendantTree.get(k);
+            String valueInAncestor = ancestorTree.get(k);
+            if (valueInAncestor == null) {
+                addedFiles.add(k);
+            } else if (valueInDescendant == null) {
+                removedFiles.add(k);
+            } else if (valueInDescendant.equals(valueInAncestor)) {
+                unchangedFiles.add(k);
+            } else {
+                modifiedFiles.add(k);
+            }
+        }
+        return Map.of(
+                "added", addedFiles,
+                "modified", modifiedFiles,
+                "removed", removedFiles,
+                "unchanged", unchangedFiles
+        );
     }
 }
