@@ -76,6 +76,27 @@ public class Main {
                 text = args[1];
                 Repository.gitMerge(text);
                 break;
+            case "add-remote":
+                validateNumArgs("add-remote", args, 3);
+                Repository.gitAddRemote(args[1], args[2]);
+                break;
+            case "rm-remote":
+                validateNumArgs("rm-remote", args, 2);
+                text = args[1];
+                Repository.gitRmRemote(text);
+                break;
+            case "push":
+                validateNumArgs("push", args, 3);
+                Repository.gitPush(args[1], args[2]);
+                break;
+            case "fetch":
+                validateNumArgs("fetch", args, 3);
+                Repository.gitFetch(args[1], args[2]);
+                break;
+            case "pull":
+                validateNumArgs("pull", args, 3);
+                Repository.gitPull(args[1], args[2]);
+                break;
             default:
                 exitWithMessage("No command with that name exists.");
         }

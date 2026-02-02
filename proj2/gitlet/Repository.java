@@ -1,6 +1,9 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import static gitlet.Utils.*;
 
 import static gitlet.Commit.*;
@@ -36,6 +39,9 @@ public class Repository {
     private static final File CURRENT_BRANCH_NAME_FILE = join(GITLET_DIR, "currentBranchName");
     /** Staging Area. */
     private static final File STAGING_AREA_FILE = join(GITLET_DIR, "stagingArea");
+    /** Remote records */
+    private static TreeMap<String, String> remotesList;
+    private static final File REMOTES_FILE = join(GITLET_DIR, "remotes");
 
     /** Creates a new Gitlet version-control system in the current directory. */
     public static void gitInit() {
@@ -427,8 +433,7 @@ public class Repository {
         }
 
         getStagingArea();
-        File branchFile = join(BRANCHES_FOLDER, branchName);
-        Branch branch = readObject(branchFile, Branch.class);
+        Branch branch = Branch.getBranch(branchName);
         checkoutCommitAllWithCheck(branch.getHeadId());
         cleanStagingArea();
         currentBranchName = branchName;
@@ -753,5 +758,111 @@ public class Repository {
                 "removed", removedFiles,
                 "unchanged", unchangedFiles
         );
+    }
+
+    private static void getRemoteRecords() {
+        if (REMOTES_FILE.exists()) {
+            remotesList = readObject(REMOTES_FILE, TreeMap.class);
+        } else {
+            remotesList = new TreeMap<>();
+        }
+    }
+
+    private static void saveRemoteRecords() {
+        writeObject(REMOTES_FILE, remotesList);
+    }
+
+    public static void gitAddRemote(String remoteName, String path) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getRemoteRecords();
+        if (remotesList.containsKey(remoteName)) {
+            exitWithMessage("A remote with that name already exists.");
+        }
+        remotesList.put(remoteName, path);
+        saveRemoteRecords();
+    }
+
+    public static void gitRmRemote(String remoteName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getRemoteRecords();
+        if (!remotesList.containsKey(remoteName)) {
+            exitWithMessage("A remote with that name does not exist.");
+        }
+        remotesList.remove(remoteName);
+        saveRemoteRecords();
+    }
+
+    public static void gitPush(String remoteName, String branchName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getRemoteRecords();
+        if (!remotesList.containsKey(remoteName)) {
+            exitWithMessage("A remote with that name does not exist.");
+        }
+        List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
+        String remoteBranchName = remoteName + "/" + branchName;
+        if (!allBranches.contains(remoteBranchName)) {
+            exitWithMessage("Please pull down remote changes before pushing.");
+        }
+
+        Remote remote = new Remote(remotesList.get(remoteName));
+        getCurrentBranch();
+        Commit currentHead = currentBranch.getHeadCommit();
+        String remoteHeadId = Branch.getBranch(remoteBranchName).getHeadId();
+        Commit c = currentHead;
+        while (!c.getId().equals(remoteHeadId)) {
+            pushCommitWithItsBlobs(remote, c);
+            c = c.getParentCommit();
+        }
+        Branch remoteBranch = readObject(
+                join(remote.getBranchesFolder(), branchName), Branch.class);
+        remoteBranch.setHead(currentHead.getId());
+        remoteBranch.saveBranch();
+    }
+
+    private static void pushCommitWithItsBlobs(Remote remote, Commit commit) {
+        String commitId = commit.getId();
+        try {
+            Files.copy(join(COMMITS_FOLDER, commitId).toPath(),
+                    join(remote.getCommitsFolder(), commitId).toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to push commit: " + commitId, e);
+        }
+
+        for (String blobId : commit.getTree().values()) {
+            try {
+                Files.copy(join(BLOBS_FOLDER, blobId).toPath(),
+                        join(remote.getBlobsFolder(), blobId).toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to push blob: " + blobId, e);
+            }
+        }
+    }
+
+    public static void gitFetch(String remoteName, String branchName) {
+        if (!GITLET_DIR.exists()) {
+            exitWithMessage("Not in an initialized Gitlet directory.");
+        }
+        getRemoteRecords();
+        if (!remotesList.containsKey(remoteName)) {
+            exitWithMessage("A remote with that name does not exist.");
+        }
+
+        Remote remote = new Remote(remotesList.get(remoteName));
+        String remoteHeadId = remote.fetch(branchName);
+        Branch remoteBranch = new Branch(remoteName + "/" + branchName, remoteHeadId);
+        remoteBranch.saveBranch();
+    }
+
+    public static void gitPull(String remoteName, String branchName) {
+        gitFetch(remoteName, branchName);
+        gitMerge(remoteName + "/" + branchName);
     }
 }
