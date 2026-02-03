@@ -71,7 +71,7 @@ public class Repository {
 
     private static void getCurrentBranch() {
         currentBranchName = readObject(CURRENT_BRANCH_NAME_FILE, String.class);
-        File currentBranchFile = join(BRANCHES_FOLDER, currentBranchName);
+        File currentBranchFile = join(BRANCHES_FOLDER, currentBranchName.replace('/', '-'));
         currentBranch = readObject(currentBranchFile, Branch.class);
     }
 
@@ -265,7 +265,7 @@ public class Repository {
         allBranches.sort(new StringComparator());
         for (String b : allBranches) {
             if (b.equals(currentBranchName)) {
-                message("*%s", b);
+                message("*%s", b.replace('-', '/'));
             } else {
                 message(b);
             }
@@ -428,7 +428,7 @@ public class Repository {
             exitWithMessage("No need to checkout the current branch.");
         }
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
-        if (!allBranches.contains(branchName)) {
+        if (!allBranches.contains(branchName.replace('/', '-'))) {
             exitWithMessage("No such branch exists.");
         }
 
@@ -507,7 +507,7 @@ public class Repository {
             exitWithMessage("Cannot remove the current branch.");
         }
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
-        if (!allBranches.contains(branchName)) {
+        if (!allBranches.contains(branchName.replace('/', '-'))) {
             exitWithMessage("A branch with that name does not exist.");
         }
         File branchFile = join(BRANCHES_FOLDER, branchName);
@@ -537,7 +537,7 @@ public class Repository {
             exitWithMessage("You have uncommitted changes.");
         }
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
-        if (!allBranches.contains(branchName)) {
+        if (!allBranches.contains(branchName.replace('/', '-'))) {
             exitWithMessage("A branch with that name does not exist.");
         }
         getCurrentBranch();
@@ -806,7 +806,7 @@ public class Repository {
         }
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
         String remoteBranchName = remoteName + "/" + branchName;
-        if (!allBranches.contains(remoteBranchName)) {
+        if (!allBranches.contains(remoteBranchName.replace('/', '-'))) {
             exitWithMessage("Please pull down remote changes before pushing.");
         }
 

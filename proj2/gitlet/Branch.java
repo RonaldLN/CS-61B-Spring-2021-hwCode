@@ -20,13 +20,13 @@ public class Branch implements Serializable {
 
     /** Save branch at BRANCHES_FOLDER. */
     public void saveBranch() {
-        File branchFile = join(BRANCHES_FOLDER, name);
+        File branchFile = join(BRANCHES_FOLDER, name.replace('/', '-'));
         writeObject(branchFile, this);
     }
 
     /** Get branch in BRANCHES_FOLDER through NAME */
     public static Branch getBranch(String name) {
-        File branchFile = join(BRANCHES_FOLDER, name);
+        File branchFile = join(BRANCHES_FOLDER, name.replace('/', '-'));
         return readObject(branchFile, Branch.class);
     }
 
