@@ -7,50 +7,37 @@ import java.util.Objects;
 
 import static gitlet.Utils.*;
 
-public class Blob {
+public class Blob implements Serializable {
     /** Blobs folder. */
     public static final File BLOBS_FOLDER = join(Repository.OBJ_FOLDER, "blobs");
-    /** Blob data */
-    private final BlobData data;
-
-    private static class BlobData implements Serializable {
-        /** File name. */
-        private final String fileName;
-        /** File contents. */
-        private final byte[] content;
-
-        BlobData(String fn, byte[] c) {
-            fileName = fn;
-            content = c;
-        }
-    }
+    /** File name. */
+    private final String fileName;
+    /** File contents. */
+    private final byte[] content;
 
     public Blob(String fn) {
         File file = join(Repository.CWD, fn);
-        data = new BlobData(fn, readContents(file));
-    }
-
-    private Blob(BlobData d) {
-        data = d;
+        content = readContents(file);
+        fileName = fn;
     }
 
     public void saveBlob() {
-        String id = sha1(serialize(data));
+        String id = sha1(serialize(this));
         File blobFile = join(BLOBS_FOLDER, id);
-        writeObject(blobFile, data);
+        writeObject(blobFile, this);
     }
 
     public static Blob getBlob(String id) {
         File blobFile = join(BLOBS_FOLDER, id);
-        return new Blob(readObject(blobFile, BlobData.class));
+        return readObject(blobFile, Blob.class);
     }
 
     public String getId() {
-        return sha1(serialize(data));
+        return sha1(serialize(this));
     }
 
     public byte[] getContent() {
-        return data.content;
+        return content;
     }
 
     @Override
@@ -67,11 +54,11 @@ public class Blob {
 
     @Override
     public int hashCode() {
-        return Objects.hash(data.fileName, Arrays.hashCode(data.content));
+        return Objects.hash(fileName, Arrays.hashCode(content));
     }
 
     public boolean equalsWithContent(File file) {
-        return sha1(readContents(file)).equals(sha1(data.content));
+        return sha1(readContents(file)).equals(sha1(content));
     }
 
     public boolean equalsWithContent(String file) {
@@ -79,7 +66,7 @@ public class Blob {
     }
 
     public void checkout() {
-        File file = join(Repository.CWD, data.fileName);
-        writeContents(file, data.content);
+        File file = join(Repository.CWD, fileName);
+        writeContents(file, content);
     }
 }

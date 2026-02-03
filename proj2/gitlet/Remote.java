@@ -31,7 +31,7 @@ public class Remote {
         if (!allBranches.contains(branchName)) {
             exitWithMessage("That remote does not have that branch.");
         }
-        Branch branch = Branch.getBranch(branchName);
+        Branch branch = readObject(join(branchesFolder, branchName), Branch.class);
 
         copyFilesInFolder(commitsFolder, Commit.COMMITS_FOLDER);
         copyFilesInFolder(blobsFolder, Blob.BLOBS_FOLDER);

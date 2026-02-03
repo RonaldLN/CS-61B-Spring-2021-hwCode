@@ -819,10 +819,10 @@ public class Repository {
             pushCommitWithItsBlobs(remote, c);
             c = c.getParentCommit();
         }
-        Branch remoteBranch = readObject(
-                join(remote.getBranchesFolder(), branchName), Branch.class);
+        File remoteBranchFile = join(remote.getBranchesFolder(), branchName);
+        Branch remoteBranch = readObject(remoteBranchFile, Branch.class);
         remoteBranch.setHead(currentHead.getId());
-        remoteBranch.saveBranch();
+        writeObject(remoteBranchFile, remoteBranch);
     }
 
     private static void pushCommitWithItsBlobs(Remote remote, Commit commit) {

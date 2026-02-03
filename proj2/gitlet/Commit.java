@@ -14,83 +14,69 @@ import static gitlet.Utils.*;
  *  parent references, and a snapshot of tracked files through blob references.
  *  @author Ronald LUO
  */
-public class Commit {
+public class Commit implements Serializable {
     /**
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
      */
 
+    /** The message of this Commit. */
+    private final String message;
+
     /** Commits folder. */
     public static final File COMMITS_FOLDER = join(Repository.OBJ_FOLDER, "commits");
 
-    /** Commit Data */
-    private final CommitData data;
-
-    private static class CommitData implements Serializable {
-        /** The message of this Commit. */
-        private final String message;
-        /** The commit date and the author of this Commit. */
-        private final Date date;
-        /** The parent commits' ids. */
-        private final String parent;
-        private final String secondParent;
-        /** A mapping of file names to blob references. */
-        private final TreeMap<String, String> tree;
-
-        CommitData(String msg, Date d, String p, String p2, TreeMap<String, String> t) {
-            message = msg;
-            date = d;
-            parent = p;
-            secondParent = p2;
-            tree = t;
-        }
-    }
-
+    /** The commit date and the author of this Commit. */
+    private final Date date;
+    /** The parent commits' ids. */
+    private final String parent;
+    private final String secondParent;
+    /** A mapping of file names to blob references. */
+    private final TreeMap<String, String> tree;
 
     public Commit(String msg, String p, String p2) {
-        Date date = new Date();
+        message = msg;
+        date = new Date();
         date.getTime();
-        data = new CommitData(msg, date, p, p2, new TreeMap<>());
+        parent = p;
+        secondParent = p2;
+        tree = new TreeMap<>();
     }
 
     public Commit(String msg, String p) {
         this(msg, p, null);
     }
 
-    private Commit(CommitData d) {
-        data = d;
-    }
-
     public static Commit makeInitialCommit() {
         Commit c = new Commit("initial commit", null);
-        c.data.date.setTime(0);
+        c.date.setTime(0);
         return c;
     }
 
     /** Save commit at COMMITS_FOLDER. */
     public void saveCommit() {
-        String id = sha1(serialize(data));
+        String id = sha1(serialize(this));
         File commitFile = join(COMMITS_FOLDER, id);
-        writeObject(commitFile, data);
+        writeObject(commitFile, this);
     }
 
     /** Get commit in COMMITS_FOLDER through ID. */
     public static Commit getCommit(String id) {
         File commitFile = join(COMMITS_FOLDER, id);
-        return new Commit(readObject(commitFile, CommitData.class));
+        return readObject(commitFile, Commit.class);
     }
 
     public String getId() {
-        return sha1(serialize(data));
+        return sha1(serialize(this));
     }
 
     public Commit getParentCommit() {
-        return data.parent == null ? null : getCommit(data.parent);
+        return parent == null ? null : getCommit(parent);
     }
 
     public Commit getSecondParentCommit() {
-        return data.secondParent == null ? null : getCommit(data.secondParent);
+        return secondParent == null ? null : getCommit(secondParent);
     }
 
     @Override
@@ -102,7 +88,7 @@ public class Commit {
             return false;
         }
         Commit c = (Commit) obj;
-        return c.getId().equals(getId());
+        return sha1(serialize(c)).equals(sha1(serialize(this)));
     }
 
     @Override
@@ -111,36 +97,35 @@ public class Commit {
         sb.append("===\n");
         sb.append("commit ");
         sb.append(getId());
-        if (data.secondParent != null) {
+        if (secondParent != null) {
             sb.append("\nMerge: ");
-            sb.append(data.parent.substring(0, 7));
+            sb.append(parent.substring(0, 7));
             sb.append(" ");
-            sb.append(data.secondParent.substring(0, 7));
+            sb.append(secondParent.substring(0, 7));
         }
         sb.append("\nDate: ");
         sb.append(formatDate());
         sb.append("\n");
-        sb.append(data.message);
+        sb.append(message);
         sb.append("\n");
         return sb.toString();
     }
 
     private String formatDate() {
-        Date date = data.date;
         return String.format(Locale.ENGLISH, "%ta %tb %te %tT %tY %tz",
                 date, date, date, date, date, date);
     }
 
     public String getMessage() {
-        return data.message;
+        return message;
     }
 
     public TreeMap<String, String> getTree() {
-        return data.tree;
+        return tree;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(data);
+        return Objects.hash(message, date, parent, secondParent, tree);
     }
 }
