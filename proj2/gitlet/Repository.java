@@ -804,13 +804,15 @@ public class Repository {
         if (!remotesList.containsKey(remoteName)) {
             exitWithMessage("A remote with that name does not exist.");
         }
+
+        Remote remote = new Remote(remotesList.get(remoteName));
+
         List<String> allBranches = plainFilenamesIn(BRANCHES_FOLDER);
         String remoteBranchName = remoteName + "/" + branchName;
         if (!allBranches.contains(remoteBranchName.replace('/', '-'))) {
             exitWithMessage("Please pull down remote changes before pushing.");
         }
 
-        Remote remote = new Remote(remotesList.get(remoteName));
         getCurrentBranch();
         Commit currentHead = currentBranch.getHeadCommit();
         String remoteHeadId = Branch.getBranch(remoteBranchName).getHeadId();
